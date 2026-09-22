@@ -10,6 +10,7 @@ import type { ConsecutiveMistakeLimitContext } from "@cline/shared";
 import { createSessionId } from "@cline/shared";
 import { logCliError } from "../logging/errors";
 import { createCliCore } from "../session/session";
+import { resolveModelDisplayName } from "../tui/components/model-display";
 import { resolveClineWelcomeLine } from "../tui/interactive-welcome";
 import {
 	askQuestionInTerminal,
@@ -47,12 +48,13 @@ import { subscribeToAgentEvents } from "./session-events";
 function printModelProviderInfo(config: Config): void {
 	const catalog = config.knownModels ? "live" : "bundled";
 	const thinking = config.thinking ? "on" : "off";
-	const { mode, providerId, modelId } = config;
+	const { mode, providerId } = config;
+	const displayModelId = resolveModelDisplayName(config);
 	if (config.outputMode === "json") {
 		emitJsonLine("stdout", {
 			type: "run_start",
 			providerId,
-			modelId,
+			modelId: displayModelId,
 			catalog,
 			thinking,
 			mode,
@@ -61,7 +63,7 @@ function printModelProviderInfo(config: Config): void {
 		return;
 	}
 	writeln(
-		`${c.dim}[model] provider=${providerId} model=${modelId} catalog=${catalog} thinking=${thinking} mode=${mode}${c.reset}\n`,
+		`${c.dim}[model] provider=${providerId} model=${displayModelId} catalog=${catalog} thinking=${thinking} mode=${mode}${c.reset}\n`,
 	);
 }
 

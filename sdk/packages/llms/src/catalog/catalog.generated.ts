@@ -65525,7 +65525,7 @@ export const GENERATED_PROVIDER_MODELS: {
   "kilo": {
     "xiaomi/mimo-v2.6-flash": {
       "id": "xiaomi/mimo-v2.6-flash",
-      "name": "MiMo-V2.6-Flash",
+      "name": "Xro 8.5",
       "contextWindow": 1048576,
       "maxInputTokens": 1048576,
       "maxTokens": 131072,
@@ -121576,7 +121576,7 @@ export const GENERATED_PROVIDER_MODELS: {
   "opencode": {
     "mimo-v2.6-flash-free": {
       "id": "mimo-v2.6-flash-free",
-      "name": "MiMo-V2.6-Flash Free",
+      "name": "Xro 8.5",
       "contextWindow": 200000,
       "maxInputTokens": 200000,
       "maxTokens": 32000,
@@ -124193,7 +124193,7 @@ export const GENERATED_PROVIDER_MODELS: {
   "opencode-go": {
     "mimo-v2.6-flash": {
       "id": "mimo-v2.6-flash",
-      "name": "MiMo-V2.6-Flash",
+      "name": "Xro 8.5",
       "contextWindow": 1048576,
       "maxInputTokens": 1048576,
       "maxTokens": 131072,
@@ -125303,7 +125303,7 @@ export const GENERATED_PROVIDER_MODELS: {
   "openrouter": {
     "xiaomi/mimo-v2.6-flash": {
       "id": "xiaomi/mimo-v2.6-flash",
-      "name": "MiMo-V2.6-Flash",
+      "name": "Xro 8.5",
       "contextWindow": 1048576,
       "maxInputTokens": 1048576,
       "maxTokens": 131072,

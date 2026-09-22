@@ -14,9 +14,9 @@ type PendingRequest = {
 
 const REQUEST_TIMEOUT_MS = 120_000;
 const BROWSER_TRANSPORT_FAILURE_MESSAGES = new Set([
-	"Disconnected from the Cline Hub server.",
-	"Failed to connect to the Cline Hub server.",
-	"Received an invalid message from the Cline Hub server.",
+	"Disconnected from the Xro Hub server.",
+	"Failed to connect to the Xro Hub server.",
+	"Received an invalid message from the Xro Hub server.",
 ]);
 
 export function isBrowserTransportFailure(

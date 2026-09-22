@@ -181,7 +181,7 @@ export function createHubCommand(
 					discovery.url,
 					discovery.authToken,
 					cmdOptions.reason ??
-						(draining ? "cline hub drain" : "cline hub drain --off"),
+						(draining ? "xro hub drain" : "xro hub drain --off"),
 					{ off: !draining },
 				);
 				if (!ok) {
@@ -222,7 +222,7 @@ export function createHubCommand(
 					const drained = await requestHubDrain(
 						discovery.url,
 						discovery.authToken,
-						"cline hub upgrade",
+						"xro hub upgrade",
 					).catch(() => false);
 					// An aborted upgrade must hand the hub back: leaving it
 					// draining refuses all new mutating work until a restart.
@@ -233,7 +233,7 @@ export function createHubCommand(
 						await requestHubDrain(
 							discovery.url,
 							discovery.authToken,
-							"cline hub upgrade aborted",
+							"xro hub upgrade aborted",
 							{ off: true },
 						).catch(() => false);
 					};

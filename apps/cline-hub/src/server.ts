@@ -284,11 +284,11 @@ export async function startClineHubDashboardServer(): Promise<ClineHubDashboardS
 export function printClineHubDashboardServerInfo(
 	server: ClineHubDashboardServer,
 ): void {
-	console.log(`Cline Hub dashboard listening: ${server.listenUrl}`);
-	console.log(`Cline Hub public URL: ${server.publicUrl}`);
+	console.log(`Xro Hub dashboard listening: ${server.listenUrl}`);
+	console.log(`Xro Hub public URL: ${server.publicUrl}`);
 	console.log(`hub endpoint: ${server.hubUrl}`);
 	if (server.inviteRequired) {
-		console.log(`Cline Hub invite URL: ${server.inviteUrl}`);
+		console.log(`Xro Hub invite URL: ${server.inviteUrl}`);
 	} else if (isNonLocalBindHost(server.bindHost)) {
 		console.warn("WARNING: non-local bind without ROOM_SECRET is not allowed.");
 	} else {

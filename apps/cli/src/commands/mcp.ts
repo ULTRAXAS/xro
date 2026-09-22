@@ -102,7 +102,7 @@ export async function runMcpInstallCommand(
 			options.isTty ?? (process.stdin.isTTY && process.stdout.isTTY);
 		if (!isTty) {
 			throw new Error(
-				"cline mcp install opens the MCP wizard and requires a TTY. Pass --yes to install noninteractively.",
+				"xro mcp install opens the MCP wizard and requires a TTY. Pass --yes to install noninteractively.",
 			);
 		}
 		const defaults = buildMcpInstallDefaults(options);

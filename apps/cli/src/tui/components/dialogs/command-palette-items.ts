@@ -1,14 +1,7 @@
 export type CommandPaletteAction =
-	| "settings"
-	| "change-model"
-	| "change-provider"
 	| "theme"
 	| "account"
-	| "mcp"
-	| "plugins"
 	| "compact"
-	| "skills"
-	| "fork"
 	| "undo"
 	| "clear"
 	| "history"
@@ -38,46 +31,11 @@ const ACTION_ITEMS: Array<{
 	requiresFork?: boolean;
 }> = [
 	{
-		action: "settings",
-		label: "Open Settings",
-		shortcut: "Opt+S",
-		description: "Review and edit CLI configuration",
-		keywords: ["config", "preferences", "general", "tools"],
-	},
-	{
-		action: "change-model",
-		label: "Change Model",
-		shortcut: "Opt+M",
-		description: "Pick a different model for future requests",
-		keywords: ["model", "provider", "llm", "reasoning", "thinking"],
-	},
-	{
-		action: "change-provider",
-		label: "Change Provider",
-		shortcut: "Opt+P",
-		description: "Switch provider and configure credentials",
-		keywords: ["provider", "api key", "account", "auth"],
-	},
-	{
 		action: "theme",
 		label: "Change Theme",
 		shortcut: "Opt+T",
 		description: "Pick a color theme for the TUI",
 		keywords: ["theme", "colors", "dark", "light", "appearance"],
-	},
-	{
-		action: "mcp",
-		label: "Manage MCP Servers",
-		shortcut: "Opt+C",
-		description: "Enable, disable, or inspect MCP servers",
-		keywords: ["mcp", "server", "tool", "toggle"],
-	},
-	{
-		action: "plugins",
-		label: "Manage Plugins",
-		shortcut: "Opt+G",
-		description: "Open plugin settings",
-		keywords: ["plugins", "extensions", "settings"],
 	},
 	{
 		action: "account",
@@ -92,21 +50,6 @@ const ACTION_ITEMS: Array<{
 		shortcut: "Opt+X",
 		description: "Compact context",
 		keywords: ["compact", "context", "compress"],
-	},
-	{
-		action: "skills",
-		label: "Browse Skills",
-		shortcut: "Opt+W",
-		description: "Insert an installed skill or workflow command",
-		keywords: ["skills", "workflows", "marketplace"],
-	},
-	{
-		action: "fork",
-		label: "Create Session Fork",
-		shortcut: "Opt+R",
-		description: "Branch the current conversation into a new session",
-		keywords: ["fork", "session", "branch"],
-		requiresFork: true,
 	},
 	{
 		action: "undo",
@@ -138,7 +81,7 @@ const ACTION_ITEMS: Array<{
 	},
 	{
 		action: "quit",
-		label: "Exit Cline",
+		label: "Exit Xro cli",
 		shortcut: "Opt+Q",
 		description: "Close the interactive CLI",
 		keywords: ["quit", "exit"],

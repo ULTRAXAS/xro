@@ -33,9 +33,9 @@ describe("slash command registry", () => {
 		});
 
 		expect(resolveSlashCommand(registry, "settings")).toMatchObject({
-			source: "tui",
-			execution: "local",
-			description: "Modify agent configuration",
+			source: "runtime",
+			execution: "runtime",
+			description: "Runtime settings",
 			visible: true,
 		});
 		expect(resolveSlashCommand(registry, "team")).toMatchObject({
@@ -43,9 +43,9 @@ describe("slash command registry", () => {
 			execution: "runtime",
 		});
 		expect(resolveSlashCommand(registry, "mcp")).toMatchObject({
-			source: "tui",
-			execution: "local",
-			description: "Manage MCP servers",
+			source: "runtime",
+			execution: "runtime",
+			description: "Runtime MCP",
 			visible: true,
 		});
 	});
@@ -94,26 +94,12 @@ describe("slash command registry", () => {
 
 		expect(
 			getVisibleSystemSlashCommands(registry).map((cmd) => cmd.name),
-		).toEqual(
-			expect.arrayContaining([
-				"settings",
-				"mcp",
-				"account",
-				"model",
-				"skills",
-				"quit",
-			]),
-		);
-		expect(resolveSlashCommand(registry, "skills")).toMatchObject({
-			source: "tui",
-			execution: "local",
-			description: "Browse skills and workflows",
-			visible: true,
-		});
+		).toEqual(expect.arrayContaining(["account", "quit"]));
+		expect(resolveSlashCommand(registry, "skills")).toBeUndefined();
 		expect(resolveSlashCommand(registry, "quit")).toMatchObject({
 			source: "tui",
 			execution: "local",
-			description: "Exit Cline",
+			description: "Exit Xro cli",
 			visible: true,
 		});
 		expect(
@@ -228,15 +214,12 @@ describe("slash command registry", () => {
 		).toBe("/find-skills what can u do?");
 	});
 
-	it("hides fork from autocomplete until a session has messages", () => {
+	it("has no local fork command", () => {
 		const emptySessionRegistry = buildSlashCommandRegistry({ canFork: false });
 		const activeSessionRegistry = buildSlashCommandRegistry({ canFork: true });
 
-		expect(resolveSlashCommand(emptySessionRegistry, "fork")).toMatchObject({
-			execution: "local",
-			visible: false,
-			selectable: false,
-		});
+		expect(resolveSlashCommand(emptySessionRegistry, "fork")).toBeUndefined();
+		expect(resolveSlashCommand(activeSessionRegistry, "fork")).toBeUndefined();
 		expect(
 			getVisibleSystemSlashCommands(emptySessionRegistry).map(
 				(command) => command.name,
@@ -246,62 +229,45 @@ describe("slash command registry", () => {
 			getVisibleSystemSlashCommands(activeSessionRegistry).map(
 				(command) => command.name,
 			),
-		).toContain("fork");
+		).not.toContain("fork");
 	});
 
-	it("keeps skills visible even when no invokable skills are installed", () => {
+	it("has no local skills command", () => {
 		const emptyRegistry = buildSlashCommandRegistry({});
 
-		expect(resolveSlashCommand(emptyRegistry, "skills")).toMatchObject({
-			execution: "local",
-			visible: true,
-			selectable: true,
-		});
+		expect(resolveSlashCommand(emptyRegistry, "skills")).toBeUndefined();
 		expect(
 			getVisibleSystemSlashCommands(emptyRegistry).map(
 				(command) => command.name,
 			),
-		).toContain("skills");
+		).not.toContain("skills");
 	});
 
-	it("exposes plugins as a local settings shortcut", () => {
+	it("has no local plugins, mcp, or model command", () => {
 		const registry = buildSlashCommandRegistry({});
 		const commandNames = getVisibleSystemSlashCommands(registry).map(
 			(command) => command.name,
 		);
 
-		expect(resolveSlashCommand(registry, "plugins")).toMatchObject({
-			source: "tui",
-			execution: "local",
-			description: "Manage plugins",
-			visible: true,
-			selectable: true,
-		});
-		expect(commandNames).toContain("plugins");
-		expect(commandNames.indexOf("plugins")).toBeGreaterThan(
-			commandNames.indexOf("mcp"),
-		);
-		expect(commandNames.indexOf("plugins")).toBeLessThan(
-			commandNames.indexOf("skills"),
-		);
+		expect(resolveSlashCommand(registry, "plugins")).toBeUndefined();
+		expect(resolveSlashCommand(registry, "mcp")).toBeUndefined();
+		expect(resolveSlashCommand(registry, "model")).toBeUndefined();
+		expect(commandNames).not.toContain("plugins");
+		expect(commandNames).not.toContain("mcp");
+		expect(commandNames).not.toContain("model");
+		expect(commandNames).not.toContain("skills");
 	});
 
-	it("keeps config as a hidden alias for settings", () => {
+	it("has no local config or settings command", () => {
 		const registry = buildSlashCommandRegistry({ canFork: true });
 
-		expect(resolveSlashCommand(registry, "config")).toMatchObject({
-			source: "tui",
-			execution: "local",
-			description: "Modify agent configuration",
-			visible: false,
-			selectable: false,
-		});
-		expect(
-			getVisibleSystemSlashCommands(registry).map((command) => command.name),
-		).not.toContain("config");
-		expect(
-			getVisibleSystemSlashCommands(registry).map((command) => command.name),
-		).toContain("settings");
+		expect(resolveSlashCommand(registry, "config")).toBeUndefined();
+		expect(resolveSlashCommand(registry, "settings")).toBeUndefined();
+		const commandNames = getVisibleSystemSlashCommands(registry).map(
+			(command) => command.name,
+		);
+		expect(commandNames).not.toContain("config");
+		expect(commandNames).not.toContain("settings");
 	});
 
 	it("always exposes the account command", () => {

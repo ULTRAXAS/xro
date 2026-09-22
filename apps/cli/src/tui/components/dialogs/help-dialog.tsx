@@ -117,33 +117,9 @@ const HELP_ROWS: HelpRow[] = [
 	{ kind: "heading", id: "h-slash", text: "Slash Commands" },
 	{
 		kind: "entry",
-		id: "c-model",
-		key: "/model",
-		desc: "Switch model or provider",
-	},
-	{
-		kind: "entry",
-		id: "c-settings",
-		key: "/settings",
-		desc: "Open interactive config browser",
-	},
-	{
-		kind: "entry",
 		id: "c-theme",
 		key: "/theme",
 		desc: "Change color theme",
-	},
-	{
-		kind: "entry",
-		id: "c-mcp",
-		key: "/mcp",
-		desc: "Manage MCP servers",
-	},
-	{
-		kind: "entry",
-		id: "c-plugins",
-		key: "/plugins",
-		desc: "Open plugin settings",
 	},
 	{
 		kind: "entry",
@@ -177,17 +153,11 @@ const HELP_ROWS: HelpRow[] = [
 	},
 	{
 		kind: "entry",
-		id: "c-fork",
-		key: "/fork",
-		desc: "Fork this session and continue there",
-	},
-	{
-		kind: "entry",
 		id: "c-undo",
 		key: "/undo",
 		desc: "Restore to a previous checkpoint",
 	},
-	{ kind: "entry", id: "c-quit", key: "/quit", desc: "Exit Cline" },
+	{ kind: "entry", id: "c-quit", key: "/quit", desc: "Exit Xro cli" },
 	{ kind: "entry", id: "c-help", key: "/help", desc: "Show this help" },
 
 	{ kind: "spacer", id: "s2" },
@@ -234,19 +204,19 @@ const HELP_ROWS: HelpRow[] = [
 	{
 		kind: "entry",
 		id: "w-connect",
-		key: "cline connect",
+		key: "xro connect",
 		desc: "Set up messaging platform integrations",
 	},
 	{
 		kind: "entry",
 		id: "w-schedule",
-		key: "cline schedule",
+		key: "xro schedule",
 		desc: "Create and manage scheduled cron tasks",
 	},
 	{
 		kind: "entry",
 		id: "w-mcp",
-		key: "cline mcp",
+		key: "xro mcp",
 		desc: "Add, remove, and manage MCP servers",
 	},
 ];

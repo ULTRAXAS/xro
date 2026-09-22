@@ -114,26 +114,6 @@ export function listInteractiveSlashCommands(
 ): InteractiveSlashCommand[] {
 	const builtins = [
 		{
-			name: "config",
-			instructions: "",
-			description: "Open interactive config browser",
-		},
-		{
-			name: "settings",
-			instructions: "",
-			description: "Modify agent configuration",
-		},
-		{
-			name: "mcp",
-			instructions: "",
-			description: "Manage MCP servers",
-		},
-		{
-			name: "fork",
-			instructions: "/fork",
-			description: "Create a named fork of the current session",
-		},
-		{
 			name: "team",
 			instructions: "/team [prompt]",
 			description: "Start the task with agent team",

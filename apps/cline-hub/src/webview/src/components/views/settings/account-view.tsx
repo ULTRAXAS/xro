@@ -380,7 +380,7 @@ export function AccountView() {
 					</h3>
 					<p className="mt-2 text-sm text-muted-foreground">
 						Connect your Cline account to review credits, usage, billing, and
-						organization details from Cline Hub.
+						organization details from Xro Hub.
 					</p>
 				</div>
 				<div className="flex flex-wrap items-center justify-center gap-2">

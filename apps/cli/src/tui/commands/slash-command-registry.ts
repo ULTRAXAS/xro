@@ -51,19 +51,6 @@ const TUI_LOCAL_COMMANDS: Array<{
 	preserveInput?: boolean;
 }> = [
 	{
-		name: "settings",
-		description: "Modify agent configuration",
-	},
-	{
-		name: "config",
-		description: "Modify agent configuration",
-		visible: false,
-	},
-	{
-		name: "model",
-		description: "Switch model or provider",
-	},
-	{
 		name: "theme",
 		description: "Change color theme",
 	},
@@ -72,25 +59,8 @@ const TUI_LOCAL_COMMANDS: Array<{
 		description: "View Cline account",
 	},
 	{
-		name: "mcp",
-		description: "Manage MCP servers",
-	},
-	{
-		name: "plugins",
-		description: "Manage plugins",
-	},
-	{
 		name: "compact",
 		description: "Compact context",
-	},
-	{
-		name: "skills",
-		description: "Browse skills and workflows",
-		preserveInput: true,
-	},
-	{
-		name: "fork",
-		description: "Create a named fork of the current session",
 	},
 	{
 		name: "undo",
@@ -110,20 +80,14 @@ const TUI_LOCAL_COMMANDS: Array<{
 	},
 	{
 		name: "quit",
-		description: "Exit Cline",
+		description: "Exit Xro cli",
 	},
 ];
 
 const SYSTEM_COMMAND_ORDER = [
-	"settings",
-	"model",
 	"theme",
 	"account",
-	"mcp",
-	"plugins",
 	"compact",
-	"skills",
-	"fork",
 	"undo",
 	"clear",
 	"team",

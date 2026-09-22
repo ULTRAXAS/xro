@@ -12,7 +12,14 @@ export function useSlashCommands(input: {
 	loadAdditionalSlashCommands: TuiProps["loadAdditionalSlashCommands"];
 	canFork: boolean;
 }) {
-	const { workflowSlashCommands, loadAdditionalSlashCommands, canFork } = input;
+	const { loadAdditionalSlashCommands, canFork } = input;
+	// Skills are discovered from ~/.agents/skills, a directory shared across
+	// other agentic CLIs on this machine, so they clutter Xro cli's menu with
+	// commands unrelated to this tool. Project-local workflows still show.
+	const workflowSlashCommands = useMemo(
+		() => input.workflowSlashCommands?.filter((command) => command.kind !== "skill"),
+		[input.workflowSlashCommands],
+	);
 	const [additionalSlashCommands, setAdditionalSlashCommands] = useState<
 		TuiProps["workflowSlashCommands"] | undefined
 	>(loadAdditionalSlashCommands ? [] : undefined);

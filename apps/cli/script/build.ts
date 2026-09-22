@@ -189,7 +189,7 @@ async function buildCompiledBinary(input: {
 	const tmpDir = join("/tmp", `cline-build-${input.dirName}`);
 	const tmpOutfile = join(
 		tmpDir,
-		input.outfile.endsWith(".exe") ? "cline.exe" : "cline",
+		input.outfile.endsWith(".exe") ? "xro.exe" : "xro",
 	);
 	mkdirSync(tmpDir, { recursive: true });
 
@@ -230,7 +230,7 @@ for (const item of targets) {
 	const displayOs = item.os === "win32" ? "windows" : item.os;
 	const name = `@cline/cli-${displayOs}-${item.arch}`;
 	const dirName = `cli-${displayOs}-${item.arch}`;
-	const binaryName = item.os === "win32" ? "cline.exe" : "cline";
+	const binaryName = item.os === "win32" ? "xro.exe" : "xro";
 	const bunTarget = getBunTarget(item);
 
 	console.log(`\nBuilding ${name} (target: ${bunTarget})...`);
@@ -291,7 +291,7 @@ for (const item of targets) {
 				cpu: [item.arch],
 				...(repository ? { repository } : {}),
 				bin: {
-					cline: `bin/${binaryName}`,
+					xro: `bin/${binaryName}`,
 				},
 			},
 			null,

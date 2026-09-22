@@ -436,7 +436,7 @@ function Shell({
 						className="size-6 shrink-0 dark:invert"
 						src="/cline-logo-filled.svg"
 					/>
-					<span className="truncate">Cline Hub</span>
+					<span className="truncate">Xro Hub</span>
 				</button>
 				<nav
 					className="grid gap-1 overflow-y-auto max-[720px]:grid-flow-col max-[720px]:auto-cols-max max-[720px]:overflow-x-auto max-[720px]:[scrollbar-width:none] max-[720px]:[&::-webkit-scrollbar]:hidden"
@@ -507,7 +507,7 @@ function HomeView({
 	return (
 		<PageFrame>
 			<PageHeader
-				title="Cline Hub"
+				title="Xro Hub"
 				description="Monitor connected clients, sessions, and hub activity."
 				className="mb-10"
 				actions={
@@ -539,7 +539,7 @@ function HomeView({
 							disabled={!hubState.connected || restartPending}
 							onClick={() => setRestartDialogOpen(true)}
 							size="sm"
-							title="Restart Cline Hub"
+							title="Restart Xro Hub"
 							type="button"
 							variant="outline"
 							className="h-7 rounded px-2 text-xs"
@@ -562,7 +562,7 @@ function HomeView({
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Restart Cline Hub</AlertDialogTitle>
+						<AlertDialogTitle>Restart Xro Hub</AlertDialogTitle>
 						<AlertDialogDescription>
 							This will shut down the current hub process and start it again.
 							Connected clients and active sessions may disconnect while the hub

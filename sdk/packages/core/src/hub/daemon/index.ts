@@ -619,10 +619,10 @@ async function ensureDetachedHubServerLocked(
 				});
 			}
 			const upgradeHint = retiredUnusableDiscovery
-				? " This can happen immediately after upgrading from a build that wrote an empty hub auth token; run 'cline doctor fix' to stop the old daemon and repair local hub discovery."
+				? " This can happen immediately after upgrading from a build that wrote an empty hub auth token; run 'xro doctor fix' to stop the old daemon and repair local hub discovery."
 				: "";
 			throw new Error(
-				`A compatible Cline Hub is already running at ${expectedUrl}, but its discovery record is missing or unreadable and no usable auth token is available. Run 'cline doctor fix' to repair local hub discovery.${upgradeHint}`,
+				`A compatible Hub is already running at ${expectedUrl}, but its discovery record is missing or unreadable and no usable auth token is available. Run 'xro doctor fix' to repair local hub discovery.${upgradeHint}`,
 			);
 		}
 		const expectedOutcome = await retireIncompatibleHub(
@@ -645,7 +645,7 @@ async function ensureDetachedHubServerLocked(
 			}
 			if (endpointOverrides.allowPortFallback !== true && endpoint.port !== 0) {
 				throw new Error(
-					`An older Cline Hub is running at ${expectedUrl} and is still serving active sessions, so it was not replaced, but no usable auth token is available to attach to it. Finish those sessions, or run 'cline doctor fix' to stop the hub.`,
+					`An older Hub is running at ${expectedUrl} and is still serving active sessions, so it was not replaced, but no usable auth token is available to attach to it. Finish those sessions, or run 'xro doctor fix' to stop the hub.`,
 				);
 			}
 		}
@@ -655,7 +655,7 @@ async function ensureDetachedHubServerLocked(
 			endpoint.port !== 0
 		) {
 			throw new Error(
-				`An incompatible Cline Hub is already running at ${expectedUrl} and could not be retired automatically. Run 'cline doctor fix' to stop stale hub daemons before starting a new hub.`,
+				`An incompatible Hub is already running at ${expectedUrl} and could not be retired automatically. Run 'xro doctor fix' to stop stale hub daemons before starting a new hub.`,
 			);
 		}
 	}
@@ -719,7 +719,7 @@ async function ensureDetachedHubServerLocked(
 				endpoint.port !== 0
 			) {
 				throw new Error(
-					`An incompatible Cline Hub is still running at ${expectedUrl} and could not be retired automatically. Run 'cline doctor fix' to stop stale hub daemons before starting a new hub.`,
+					`An incompatible Hub is still running at ${expectedUrl} and could not be retired automatically. Run 'xro doctor fix' to stop stale hub daemons before starting a new hub.`,
 				);
 			}
 		}
@@ -861,7 +861,7 @@ export async function upgradeManagedHub(
 	// automatic ensure path once it is idle at the next client startup.
 	if (!drained) {
 		throw new Error(
-			`The running Cline Hub at ${record.url} did not accept a drain request, so it was not replaced. It is replaced automatically once idle when a Cline client next starts, or run 'cline doctor fix' to stop it now.`,
+			`The running Hub at ${record.url} did not accept a drain request, so it was not replaced. It is replaced automatically once idle when a Cline client next starts, or run 'xro doctor fix' to stop it now.`,
 		);
 	}
 	// An aborted upgrade must hand the hub back: leaving it draining refuses
@@ -917,7 +917,7 @@ export async function upgradeManagedHub(
 	if (!(await retireDiscoveredHub(record, owner.discoveryPath))) {
 		await undrain();
 		throw new Error(
-			`The running Cline Hub at ${record.url} could not be stopped. Run 'cline doctor fix' to stop stale hub daemons, then try again.`,
+			`The running Hub at ${record.url} could not be stopped. Run 'xro doctor fix' to stop stale hub daemons, then try again.`,
 		);
 	}
 	const ensured = await ensureDetachedHubServer(workspaceRoot);

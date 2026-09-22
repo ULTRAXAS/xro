@@ -1,6 +1,6 @@
 {
 	"name": "@cline/cli",
-	"displayName": "cline",
+	"displayName": "Xro cli",
 	"version": "3.0.63",
 	"description": "Autonomous coding agent CLI - capable of creating/editing files, running commands, using the browser, and more",
 	"type": "module",
@@ -36,7 +36,7 @@
 		"url": "https://github.com/cline/cline/issues"
 	},
 	"bin": {
-		"cline": "src/index.ts"
+		"xro": "src/index.ts"
 	},
 	"engines": {
 		"node": ">=22"

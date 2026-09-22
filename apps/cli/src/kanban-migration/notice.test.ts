@@ -1,12 +1,6 @@
-import {
-	mkdirSync,
-	mkdtempSync,
-	readFileSync,
-	rmSync,
-	writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
 	getClineCliMigrationNotice,
@@ -30,93 +24,23 @@ describe("migration notice", () => {
 		}
 	});
 
-	it("returns the notice for a fresh data dir", () => {
+	it("never shows the upstream ClinePass/Cline Desktop promo notices", () => {
 		const dataDir = createTempDataDir();
-
-		expect(getClineCliMigrationNotice(dataDir)?.title).toBe("Try ClinePass");
-	});
-
-	it("shows when only the old Kanban notice was marked as shown", () => {
-		const dataDir = createTempDataDir();
-		const noticePath = resolveCliNoticeStatePath(dataDir);
-		mkdirSync(dirname(noticePath), { recursive: true, mode: 0o700 });
-		writeFileSync(
-			noticePath,
-			`${JSON.stringify(
-				{ shown: { "cline-cli-tui-default": true } },
-				null,
-				2,
-			)}\n`,
-			"utf8",
-		);
-
-		expect(getClineCliMigrationNotice(dataDir)?.id).toBe(
-			"cline-cli-cline-pass-intro",
-		);
-	});
-
-	it("does not show after every notice is marked as shown", () => {
-		const dataDir = createTempDataDir();
-
-		markClineCliMigrationNoticeShown(dataDir);
-		markClineCliMigrationNoticeShown(dataDir, "cline-cli-desktop-launch");
 
 		expect(getClineCliMigrationNotice(dataDir)).toBeUndefined();
 	});
 
-	it("shows the desktop launch notice once the ClinePass intro was shown", () => {
+	it("stays disabled even when the force env var is set", () => {
 		const dataDir = createTempDataDir();
-
-		markClineCliMigrationNoticeShown(dataDir);
-
-		const notice = getClineCliMigrationNotice(dataDir);
-		expect(notice?.id).toBe("cline-cli-desktop-launch");
-		expect(notice?.url).toBe("https://cline.bot/desktop");
-	});
-
-	it("shows only one notice per launch", () => {
-		const dataDir = createTempDataDir();
-
-		expect(getClineCliMigrationNotice(dataDir)?.id).toBe(
-			"cline-cli-cline-pass-intro",
-		);
-	});
-
-	it("marks the desktop launch notice as shown by id", () => {
-		const dataDir = createTempDataDir();
-
-		markClineCliMigrationNoticeShown(dataDir);
-		markClineCliMigrationNoticeShown(dataDir, "cline-cli-desktop-launch");
-
-		const rawState = readFileSync(resolveCliNoticeStatePath(dataDir), "utf8");
-		expect(rawState).toContain('"cline-cli-cline-pass-intro": true');
-		expect(rawState).toContain('"cline-cli-desktop-launch": true');
-		expect(getClineCliMigrationNotice(dataDir)).toBeUndefined();
-	});
-
-	it("shows after the notice is marked as shown when forced", () => {
-		const dataDir = createTempDataDir();
-
-		markClineCliMigrationNoticeShown(dataDir);
 
 		expect(
 			getClineCliMigrationNotice(dataDir, {
 				CLINE_FORCE_CLINE_PASS_NOTICE: "1",
 			}),
-		).toBeDefined();
-	});
-
-	it("does not show when disabled through the environment", () => {
-		const dataDir = createTempDataDir();
-
-		expect(
-			getClineCliMigrationNotice(dataDir, {
-				CLINE_DISABLE_CLINE_PASS_NOTICE: "1",
-			}),
 		).toBeUndefined();
 	});
 
-	it("does not show the ClinePass intro when ClinePass is already the active provider", () => {
+	it("stays disabled regardless of active provider", () => {
 		const dataDir = createTempDataDir();
 
 		expect(
@@ -124,8 +48,8 @@ describe("migration notice", () => {
 				dataDir,
 				{},
 				{ activeProviderId: "cline-pass" },
-			)?.id,
-		).toBe("cline-cli-desktop-launch");
+			),
+		).toBeUndefined();
 	});
 
 	it("suppresses the active ClinePass provider even when the provider id has surrounding whitespace", () => {
@@ -142,29 +66,6 @@ describe("migration notice", () => {
 		).toBe(false);
 	});
 
-	it("shows for the active ClinePass provider when forced", () => {
-		const dataDir = createTempDataDir();
-
-		expect(
-			getClineCliMigrationNotice(
-				dataDir,
-				{ CLINE_FORCE_CLINE_PASS_NOTICE: "1" },
-				{ activeProviderId: "cline-pass" },
-			),
-		).toBeDefined();
-	});
-
-	it("shows when forced even if disabled through the environment", () => {
-		const dataDir = createTempDataDir();
-
-		expect(
-			getClineCliMigrationNotice(dataDir, {
-				CLINE_DISABLE_CLINE_PASS_NOTICE: "1",
-				CLINE_FORCE_CLINE_PASS_NOTICE: "1",
-			}),
-		).toBeDefined();
-	});
-
 	it("marks the notice as shown", () => {
 		const dataDir = createTempDataDir();
 
@@ -172,8 +73,6 @@ describe("migration notice", () => {
 
 		const rawState = readFileSync(resolveCliNoticeStatePath(dataDir), "utf8");
 		expect(rawState).toContain("cline-cli-cline-pass-intro");
-		expect(getClineCliMigrationNotice(dataDir)?.id).not.toBe(
-			"cline-cli-cline-pass-intro",
-		);
+		expect(getClineCliMigrationNotice(dataDir)).toBeUndefined();
 	});
 });

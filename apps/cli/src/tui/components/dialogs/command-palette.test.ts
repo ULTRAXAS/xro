@@ -5,6 +5,7 @@ import {
 } from "../../commands/slash-command-registry";
 import {
 	buildCommandPaletteItems,
+	type CommandPaletteAction,
 	filterCommandPaletteItems,
 	findCommandPaletteShortcut,
 } from "./command-palette-items";
@@ -16,9 +17,7 @@ describe("command palette", () => {
 		});
 		const labels = items.map((item) => item.label);
 
-		expect(labels).toContain("Change Provider");
-		expect(labels).toContain("Manage MCP Servers");
-		expect(labels).toContain("Manage Plugins");
+		expect(labels).toContain("Change Theme");
 		expect(labels).toContain("Compact Context");
 		expect(labels).not.toContain("/settings");
 		expect(labels).not.toContain("Toggle Plan/Act Mode");
@@ -28,36 +27,27 @@ describe("command palette", () => {
 		expect(items.map((item) => item.shortcut)).not.toContain("Opt+?");
 	});
 
-	it("shows fork only when the current session can be forked", () => {
-		const items = buildCommandPaletteItems({
-			canForkSession: true,
-		});
-
-		expect(items.map((item) => item.label)).toContain("Create Session Fork");
-	});
-
 	it("covers visible local slash commands with palette wording", () => {
 		const registry = buildSlashCommandRegistry({
 			canFork: true,
 		});
 		const slashCommands = getVisibleSystemSlashCommands(registry).filter(
-			(command) => command.source === "tui" && command.name !== "config",
+			(command) => command.source === "tui",
 		);
 		const items = buildCommandPaletteItems({
 			canForkSession: true,
 		});
 		const paletteByCommandName = new Map(
-			items.map((item) => [
-				item.result.action === "change-model" ? "model" : item.result.action,
-				item,
-			]),
+			items.map((item) => [item.result.action, item]),
 		);
 
 		for (const command of slashCommands) {
-			expect(paletteByCommandName.has(command.name)).toBe(true);
+			expect(
+				paletteByCommandName.has(command.name as CommandPaletteAction),
+			).toBe(true);
 		}
-		expect(paletteByCommandName.get("settings")?.description).toBe(
-			"Review and edit CLI configuration",
+		expect(paletteByCommandName.get("account")?.description).toBe(
+			"View or switch your Cline account",
 		);
 	});
 
@@ -66,17 +56,11 @@ describe("command palette", () => {
 			canForkSession: true,
 		});
 
-		expect(filterCommandPaletteItems(items, "provider")[0]?.label).toBe(
-			"Change Provider",
+		expect(filterCommandPaletteItems(items, "theme")[0]?.label).toBe(
+			"Change Theme",
 		);
-		expect(filterCommandPaletteItems(items, "mcp")[0]?.label).toBe(
-			"Manage MCP Servers",
-		);
-		expect(filterCommandPaletteItems(items, "plugins")[0]?.label).toBe(
-			"Manage Plugins",
-		);
-		expect(filterCommandPaletteItems(items, "opt m")[0]?.label).toBe(
-			"Change Model",
+		expect(filterCommandPaletteItems(items, "opt t")[0]?.label).toBe(
+			"Change Theme",
 		);
 	});
 
@@ -87,23 +71,23 @@ describe("command palette", () => {
 
 		expect(
 			findCommandPaletteShortcut(items, {
-				name: "m",
+				name: "t",
 				meta: true,
 				option: false,
 				shift: false,
 			})?.label,
-		).toBe("Change Model");
+		).toBe("Change Theme");
 		expect(
 			findCommandPaletteShortcut(items, {
-				name: "m",
+				name: "t",
 				meta: false,
 				option: true,
 				shift: false,
 			})?.label,
-		).toBe("Change Model");
+		).toBe("Change Theme");
 		expect(
 			findCommandPaletteShortcut(items, {
-				name: "m",
+				name: "t",
 				meta: false,
 				option: false,
 				shift: false,
@@ -117,28 +101,5 @@ describe("command palette", () => {
 				shift: false,
 			})?.label,
 		).toBe("Open Help");
-	});
-
-	it("keeps option right available for word navigation", () => {
-		const items = buildCommandPaletteItems({
-			canForkSession: true,
-		});
-
-		expect(
-			findCommandPaletteShortcut(items, {
-				name: "f",
-				meta: false,
-				option: true,
-				shift: false,
-			}),
-		).toBeUndefined();
-		expect(
-			findCommandPaletteShortcut(items, {
-				name: "r",
-				meta: false,
-				option: true,
-				shift: false,
-			})?.label,
-		).toBe("Create Session Fork");
 	});
 });

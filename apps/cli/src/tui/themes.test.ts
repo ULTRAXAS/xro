@@ -44,8 +44,8 @@ describe("theme registry", () => {
 
 describe("normalizeThemeId", () => {
 	it("accepts known ids case-insensitively", () => {
-		expect(normalizeThemeId("tokyo-night")).toBe("tokyo-night");
-		expect(normalizeThemeId(" Dracula ")).toBe("dracula");
+		expect(normalizeThemeId("dark")).toBe("dark");
+		expect(normalizeThemeId(" Light ")).toBe("light");
 	});
 
 	it("falls back to auto for unknown or missing ids", () => {
@@ -84,8 +84,8 @@ describe("resolveTheme", () => {
 			foreground: "#1a1a1a",
 		});
 		expect(forcedDark.variant).toBe("dark");
-		expect(forcedDark.appBackground).toBe("#14161b");
-		expect(forcedDark.background).toBe("#14161b");
+		expect(forcedDark.appBackground).toBe("#000000");
+		expect(forcedDark.background).toBe("#000000");
 		expect(forcedDark.accents.act).toBe(themePalette.dark.act);
 
 		const forcedLight = resolveTheme("light", noDetection);
@@ -95,19 +95,14 @@ describe("resolveTheme", () => {
 		expect(forcedLight.accents.act).toBe(themePalette.light.act);
 	});
 
-	it("named themes carry their own accents, syntax, and derived diff", () => {
-		const tokyo = resolveTheme("tokyo-night", noDetection);
-		expect(tokyo.variant).toBe("dark");
-		expect(tokyo.appBackground).toBe("#1a1b26");
-		expect(tokyo.defaultForeground).toBe("#c0caf5");
-		expect(tokyo.accents.act).toBe("#7aa2f7");
-		expect(tokyo.syntax.keyword).toBe("#bb9af7");
-		expect(tokyo.diff.addedSignColor).toBe("#9ece6a");
-		expect(tokyo.diff.removedSignColor).toBe("#f7768e");
-		// Derived diff backgrounds are tints of the theme background, not the
-		// stock dark diff palette.
-		expect(tokyo.diff.addedBg).not.toBe(diffPalettes.dark.addedBg);
-		expect(tokyo.diff.addedBg).toMatch(/^#[0-9a-f]{6}$/i);
+	it("forced dark theme carries the base accents and syntax palette", () => {
+		const dark = resolveTheme("dark", noDetection);
+		expect(dark.variant).toBe("dark");
+		expect(dark.appBackground).toBe("#000000");
+		expect(dark.accents.act).toBe(themePalette.dark.act);
+		expect(dark.syntax.keyword).toBeTruthy();
+		expect(dark.diff.addedSignColor).toBeTruthy();
+		expect(dark.diff.addedBg).toMatch(/^#[0-9a-f]{6}$/i);
 	});
 
 	it("falls back to auto for unknown ids", () => {
@@ -150,37 +145,33 @@ describe("resolveTheme", () => {
 
 describe("theme helpers", () => {
 	it("getThemeModeAccent picks the accent by mode", () => {
-		const theme = resolveTheme("nord", noDetection);
-		expect(getThemeModeAccent(theme, "act")).toBe("#88c0d0");
-		expect(getThemeModeAccent(theme, "plan")).toBe("#ebcb8b");
+		const theme = resolveTheme("dark", noDetection);
+		expect(getThemeModeAccent(theme, "act")).toBe(themePalette.dark.act);
+		expect(getThemeModeAccent(theme, "plan")).toBe(themePalette.dark.plan);
 	});
 
 	it("getDialogAccents falls back to dark accents for light themes", () => {
-		const solarizedLight = resolveTheme("solarized-light", noDetection);
-		expect(getDialogAccents(solarizedLight).act).toBe(themePalette.dark.act);
+		const light = resolveTheme("light", noDetection);
+		expect(getDialogAccents(light).act).toBe(themePalette.dark.act);
 
-		const dracula = resolveTheme("dracula", noDetection);
-		expect(getDialogAccents(dracula).act).toBe("#bd93f9");
+		const dark = resolveTheme("dark", noDetection);
+		expect(getDialogAccents(dark).act).toBe(themePalette.dark.act);
 	});
 
 	it("getThemeDefinition finds registered themes", () => {
-		expect(getThemeDefinition("gruvbox-dark")?.label).toBe("Gruvbox Dark");
+		expect(getThemeDefinition("dark")?.label).toBe("Dark");
 		expect(getThemeDefinition("missing")).toBeUndefined();
 	});
 
 	it("getDialogPalette follows the theme's dialog accents", () => {
-		const dracula = getDialogPalette(resolveTheme("dracula", noDetection));
-		expect(dracula.act).toBe("#bd93f9");
-		expect(dracula.selection).toBe("#bd93f9");
-		expect(dracula.success).toBe("#50fa7b");
-		expect(dracula.error).toBe("#ff5555");
-		expect(dracula.textOnSelection).toBe("#000000");
+		const dark = getDialogPalette(resolveTheme("dark", noDetection));
+		expect(dark.act).toBe(themePalette.dark.act);
+		expect(dark.selection).toBe(themePalette.dark.act);
+		expect(dark.success).toBe(themePalette.dark.success);
 
 		// Light themes fall back to dark accents (dialog surfaces stay dark).
-		const solarizedLight = getDialogPalette(
-			resolveTheme("solarized-light", noDetection),
-		);
-		expect(solarizedLight.act).toBe(themePalette.dark.act);
+		const light = getDialogPalette(resolveTheme("light", noDetection));
+		expect(light.act).toBe(themePalette.dark.act);
 
 		for (const definition of THEMES) {
 			const dialogPalette = getDialogPalette(
@@ -192,15 +183,14 @@ describe("theme helpers", () => {
 	});
 
 	it("getDialogSurface lifts dark theme backgrounds and keeps hue", () => {
-		// Dark themes derive the panel from their own background: a different,
-		// lighter color than both the background and the neutral default.
-		for (const id of ["tokyo-night", "dracula", "gruvbox-dark", "nord"]) {
-			const theme = resolveTheme(id, noDetection);
-			const surface = getDialogSurface(theme);
-			expect(surface).toMatch(/^#[0-9a-f]{6}$/i);
-			expect(surface).not.toBe(theme.background);
-			expect(surface).not.toBe(DEFAULT_DIALOG_SURFACE);
-		}
+		// The dark theme derives the panel from its own background: a
+		// different, lighter color than both the background and the neutral
+		// default.
+		const dark = resolveTheme("dark", noDetection);
+		const darkSurface = getDialogSurface(dark);
+		expect(darkSurface).toMatch(/^#[0-9a-f]{6}$/i);
+		expect(darkSurface).not.toBe(dark.background);
+		expect(darkSurface).not.toBe(DEFAULT_DIALOG_SURFACE);
 
 		// Auto with no detected background has nothing to derive from.
 		expect(getDialogSurface(resolveTheme(AUTO_THEME_ID, noDetection))).toBe(
@@ -221,12 +211,8 @@ describe("theme helpers", () => {
 		expect(getDialogSurface(resolveTheme("light", noDetection))).toBe(
 			DEFAULT_DIALOG_SURFACE,
 		);
-		expect(getDialogSurface(resolveTheme("solarized-light", noDetection))).toBe(
-			DEFAULT_DIALOG_SURFACE,
-		);
 
 		// The palette exposes the same surface.
-		const dracula = resolveTheme("dracula", noDetection);
-		expect(getDialogPalette(dracula).surface).toBe(getDialogSurface(dracula));
+		expect(getDialogPalette(dark).surface).toBe(darkSurface);
 	});
 });

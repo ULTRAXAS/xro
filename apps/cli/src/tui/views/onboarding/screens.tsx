@@ -15,11 +15,9 @@ import {
 	SearchableList,
 	type SearchableListState,
 } from "../../components/searchable-list";
-import {
-	TrackedRobot,
-	type useMouseTracker,
-} from "../../components/tracked-robot";
+import type { useMouseTracker } from "../../components/tracked-robot";
 import { useTheme } from "../../hooks/use-theme";
+import { XroLogo } from "../../components/xro-logo";
 import { getInputRuleColor, getUserMessageBackground } from "../../palette";
 import { FIELD_ORDER } from "./fields";
 import {
@@ -79,9 +77,7 @@ function OnboardingFrame({
 			alignItems="center"
 			onMouseMove={mouse.onMouseMove}
 		>
-			{!compact && (
-				<TrackedRobot cursorX={mouse.cursor.x} cursorY={mouse.cursor.y} />
-			)}
+			{!compact && <XroLogo />}
 			<box
 				flexDirection="column"
 				width={contentWidth}
@@ -877,10 +873,7 @@ export function OnboardingMainMenuScreen(props: {
 			alignItems="center"
 			onMouseMove={props.mouse.onMouseMove}
 		>
-			<TrackedRobot
-				cursorX={props.mouse.cursor.x}
-				cursorY={props.mouse.cursor.y}
-			/>
+			<XroLogo />
 
 			<box
 				flexDirection="column"
@@ -889,7 +882,7 @@ export function OnboardingMainMenuScreen(props: {
 				marginTop={1}
 			>
 				<text fg={defaultFg}>
-					<strong>Welcome to Cline</strong>
+					<strong>Welcome to Xro cli</strong>
 				</text>
 				<text fg="gray" marginTop={1}>
 					Connect a model provider to get started.

@@ -645,7 +645,7 @@ describe("runCli lightweight command dispatch", () => {
 			),
 		);
 		expect(consoleError).toHaveBeenCalledWith(
-			expect.stringContaining('Use "cline --help"'),
+			expect.stringContaining('Use "xro --help"'),
 		);
 		expect(runtimeMocks.runAgent).not.toHaveBeenCalled();
 		expect(mockState.runAgentImports).toBe(0);
@@ -933,7 +933,7 @@ describe("runCli lightweight command dispatch", () => {
 
 		await expect(runCli()).resolves.toBeUndefined();
 		expect(llmMocks.resolveProviderConfig).toHaveBeenCalledWith(
-			"cline",
+			"openai-compatible",
 			{
 				loadLatestOnInit: true,
 				loadPrivateOnAuth: true,
@@ -962,7 +962,7 @@ describe("runCli lightweight command dispatch", () => {
 
 		await expect(runCli()).resolves.toBeUndefined();
 		expect(llmMocks.resolveProviderConfig).toHaveBeenCalledWith(
-			"cline",
+			"openai-compatible",
 			{
 				loadLatestOnInit: true,
 				loadPrivateOnAuth: true,
@@ -990,7 +990,7 @@ describe("runCli lightweight command dispatch", () => {
 
 		await expect(runCli()).resolves.toBeUndefined();
 		expect(llmMocks.resolveProviderConfig).toHaveBeenCalledWith(
-			"cline",
+			"openai-compatible",
 			undefined,
 			undefined,
 		);

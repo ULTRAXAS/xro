@@ -2781,11 +2781,11 @@ export const GENERATED_PROVIDER_SPECS: readonly BuiltinSpec[] = [
 		family: "openai-compatible",
 		capabilities: ["tools", "reasoning", "prompt-cache"],
 		modelsProviderId: "xiaomi",
-		defaultModelId: "mimo-v2.5-pro-ultraspeed",
+		defaultModelId: "xiaomi/mimo-v2.6-flash",
 		apiKeyEnv: ["XIAOMI_API_KEY"],
 		docsUrl: "https://platform.xiaomimimo.com/#/docs",
 		defaults: {
-			baseUrl: "https://api.xiaomimimo.com/v1",
+			baseUrl: "https://token-plan-sgp.xiaomimimo.com/v1",
 		},
 	},
 	{

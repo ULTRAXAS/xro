@@ -1,5 +1,6 @@
 import type { SessionAccumulatedUsage, SessionRecord } from "@cline/core";
 import type { Message } from "@cline/shared";
+import { resolveModelDisplayName } from "../../tui/components/model-display";
 import { c, formatUsd } from "../../utils/output";
 import { shouldShowCliUsageCost } from "../../utils/usage-cost-display";
 
@@ -27,8 +28,11 @@ function trim(value: string | null | undefined): string | undefined {
 function providerModel(summary: InteractiveExitSummary): string | undefined {
 	const provider = trim(summary.provider);
 	const model = trim(summary.model);
-	if (provider && model) return `${provider}:${model}`;
-	return provider ?? model;
+	const displayModel = model
+		? resolveModelDisplayName({ providerId: provider, modelId: model })
+		: undefined;
+	if (provider && displayModel) return `${provider}:${displayModel}`;
+	return provider ?? displayModel;
 }
 
 function formatDuration(startedAt: string | undefined): string {
@@ -93,7 +97,7 @@ export function formatInteractiveExitSummary(
 		showUsageCost && typeof summary.totalCost === "number"
 			? `  Cost      ${formatUsd(summary.totalCost)}`
 			: undefined,
-		`  Continue  ${c.cyan}cline --id ${summary.sessionId}${c.reset}`,
+		`  Continue  ${c.cyan}xro --id ${summary.sessionId}${c.reset}`,
 		"",
 	];
 	return lines.filter((line): line is string => line !== undefined).join("\n");

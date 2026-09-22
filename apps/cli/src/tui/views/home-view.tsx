@@ -11,7 +11,7 @@ import {
 	resolveModelMaxInputTokens,
 	StatusBar,
 } from "../components/status-bar";
-import { TrackedRobot, useMouseTracker } from "../components/tracked-robot";
+import { XroLogo } from "../components/xro-logo";
 import { useSession } from "../contexts/session-context";
 import { useTheme } from "../hooks/use-theme";
 import {
@@ -54,9 +54,8 @@ export function HomeView(props: {
 		repoStatus,
 	} = props;
 	const session = useSession();
-	const { width, height } = useTerminalDimensions();
-	const mouse = useMouseTracker();
-	const [inputCursor, setInputCursor] = useState<{
+	const { width } = useTerminalDimensions();
+	const [, setInputCursor] = useState<{
 		visualCol: number;
 		visualRow: number;
 	} | null>(null);
@@ -75,16 +74,6 @@ export function HomeView(props: {
 	const hasAutocomplete =
 		props.autocomplete?.mode && props.autocomplete.options.length > 0;
 	const contentWidth = Math.min(width, HOME_VIEW_MAX_WIDTH);
-	const hasTypedInput = inputValue.trim().length > 0;
-	const inputStartX = Math.floor((width - contentWidth) / 2) + 2;
-	const clamp = (value: number, min: number, max: number) =>
-		Math.max(min, Math.min(max, value));
-	const trackedCursorX = hasTypedInput
-		? clamp(inputStartX + (inputCursor?.visualCol ?? 0), 0, width)
-		: mouse.cursor.x;
-	const trackedCursorY = hasTypedInput
-		? clamp(height - 2 + (inputCursor?.visualRow ?? 0), 0, height)
-		: mouse.cursor.y;
 
 	return (
 		<box
@@ -93,9 +82,8 @@ export function HomeView(props: {
 			height="100%"
 			alignItems="center"
 			justifyContent="center"
-			onMouseMove={mouse.onMouseMove}
 		>
-			<TrackedRobot cursorX={trackedCursorX} cursorY={trackedCursorY} />
+			<XroLogo />
 			<box marginTop={1} marginBottom={1} flexShrink={0}>
 				<text fg={defaultFg}>
 					<strong>What can I do for you?</strong>
@@ -104,7 +92,7 @@ export function HomeView(props: {
 			<box marginBottom={1} flexShrink={0}>
 				<text fg="gray">
 					<em>
-						Use / for slash commands, @ for file mentions, Ctrl+P for menu
+						Use / for slash commands, @ for file mentions — by ULTRAXAS
 					</em>
 				</text>
 			</box>

@@ -616,17 +616,17 @@ function App(props: TuiProps) {
 					if (!update) {
 						// choice() resolves undefined on Esc; it does not reject.
 						showToast(
-							"The running Cline Hub stays on the older version. Run 'cline hub upgrade' once its sessions finish.",
+							"The running Hub stays on the older version. Run 'xro hub upgrade' once its sessions finish.",
 							"info",
 						);
 						refocusTextareaRef.current();
 						return;
 					}
-					showToast("Updating the Cline Hub…", "info");
+					showToast("Updating the Hub…", "info");
 					try {
 						const result = await upgradeManagedHub({
 							force: true,
-							reason: "cline TUI hub update",
+							reason: "xro TUI hub update",
 						});
 						if (result.outcome === "still_busy") {
 							showToast(
@@ -636,8 +636,8 @@ function App(props: TuiProps) {
 						} else {
 							showToast(
 								result.outcome === "replaced" || result.outcome === "started"
-									? "Cline Hub updated."
-									: "Cline Hub is already up to date.",
+									? "Hub updated."
+									: "Hub is already up to date.",
 								"success",
 							);
 						}
@@ -645,7 +645,7 @@ function App(props: TuiProps) {
 						showToast(
 							error instanceof Error && error.message
 								? error.message
-								: "Updating the Cline Hub failed. Run 'cline doctor fix' and try again.",
+								: "Updating the Hub failed. Run 'xro doctor fix' and try again.",
 							"error",
 						);
 					}
@@ -663,9 +663,9 @@ function App(props: TuiProps) {
 			// observed Hub build, the watcher dedupes) says what changed and
 			// how to catch up without stealing focus.
 			showToast(
-				`The shared Cline Hub was updated${
+				`The shared Hub was updated${
 					hubCoreVersion ? ` (core ${hubCoreVersion})` : ""
-				}. Run 'cline update' and restart when convenient.`,
+				}. Run 'xro update' and restart when convenient.`,
 				"info",
 			);
 			return;
@@ -685,7 +685,7 @@ function App(props: TuiProps) {
 					return;
 				}
 				showToast(
-					"Hub still differs from this CLI. Run 'cline update' and restart when convenient.",
+					"Hub still differs from this CLI. Run 'xro update' and restart when convenient.",
 					"info",
 				);
 				refocusTextareaRef.current();
@@ -791,18 +791,9 @@ function App(props: TuiProps) {
 
 	const runCommandPaletteResult = useCallback(
 		async (result: CommandPaletteResult) => {
-			if (result.action === "change-provider") {
-				await openModelSelector({ startWithProviderChange: true });
-				return;
-			}
-			if (result.action === "change-model") {
-				await openModelSelector();
-				return;
-			}
-
 			await Promise.resolve(handleSlashCommand(result.action));
 		},
-		[handleSlashCommand, openModelSelector],
+		[handleSlashCommand],
 	);
 
 	const commandPaletteOpenRef = useRef(false);

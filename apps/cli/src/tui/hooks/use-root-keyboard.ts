@@ -144,11 +144,6 @@ export function useRootKeyboard(input: {
 			return;
 		}
 
-		if (key.ctrl && key.name === "p" && !session.isRunning) {
-			void input.onOpenCommandPalette();
-			return;
-		}
-
 		const queuedSelection = input.queuedPromptSelection;
 		const hasQueuedPrompts = queuedSelection.items.length > 0;
 		const selectedQueuedPromptId = queuedSelection.selectedId;

@@ -133,7 +133,7 @@ function promptArgLooksQuoted(arg: string | undefined): boolean {
 function writePromptArgError(args: string[]): void {
 	const renderedArgs = args.join(" ");
 	writeErr(
-		`Unknown command or unquoted prompt: ${renderedArgs}\nPrompt text must be passed as a single quoted argument, for example: cline "fix the tests". Use "cline --help" to see available commands and flags.`,
+		`Unknown command or unquoted prompt: ${renderedArgs}\nPrompt text must be passed as a single quoted argument, for example: xro "fix the tests". Use "xro --help" to see available commands and flags.`,
 	);
 }
 
@@ -611,7 +611,7 @@ export async function runCli(): Promise<void> {
 
 	const dashboardCmd = program
 		.command("dashboard")
-		.description("Start the Cline Hub dashboard and open it in a browser")
+		.description("Start the Hub dashboard and open it in a browser")
 		.option("--config <dir>", "configuration directory")
 		.option("-c, --cwd <path>", "Workspace root", process.cwd())
 		.option(
@@ -949,7 +949,9 @@ export async function runCli(): Promise<void> {
 				isClinePassEnabled: true,
 			});
 		const provider = normalizeProviderId(
-			args.provider?.trim() || lastUsedProviderSettings?.provider || "cline",
+			args.provider?.trim() ||
+				lastUsedProviderSettings?.provider ||
+				"openai-compatible",
 		);
 		let selectedProviderSettings =
 			providerSettingsManager.getProviderSettings(provider);

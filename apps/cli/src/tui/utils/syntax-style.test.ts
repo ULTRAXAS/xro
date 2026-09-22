@@ -46,10 +46,6 @@ const lightTheme = resolveTheme("auto", {
 	background: "#ffffff",
 	foreground: null,
 });
-const tokyoNight = resolveTheme("tokyo-night", {
-	background: null,
-	foreground: null,
-});
 
 describe("getSyntaxStyle", () => {
 	it("keeps dark markdown prose on the terminal default foreground", () => {
@@ -95,17 +91,5 @@ describe("getSyntaxStyle", () => {
 		expect(getSyntaxStyle(darkTheme, "plan").getStyle("keyword")).toEqual(
 			getSyntaxStyle(darkTheme, "act").getStyle("keyword"),
 		);
-	});
-
-	it("uses named theme syntax palettes and accents", () => {
-		// Tokyo Night keyword #bb9af7, act accent #7aa2f7.
-		expect(
-			getSyntaxStyle(tokyoNight, "act").getStyle("keyword")?.fg?.toInts(),
-		).toEqual([0xbb, 0x9a, 0xf7, 255]);
-		expect(
-			getSyntaxStyle(tokyoNight, "act")
-				.getStyle("markup.heading")
-				?.fg?.toInts(),
-		).toEqual([0x7a, 0xa2, 0xf7, 255]);
 	});
 });
