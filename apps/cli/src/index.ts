@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 import { isMainThread } from "node:worker_threads";
 import {
@@ -18,6 +18,9 @@ import {
 import { registerClineClientIdentity } from "./utils/cline-client-identity";
 import { resolveCliLaunchSpec } from "./utils/internal-launch";
 import { writeErr } from "./utils/output";
+
+// Disable AI SDK deprecation warning logs in CLI output
+(globalThis as unknown as { AI_SDK_LOG_WARNINGS: boolean }).AI_SDK_LOG_WARNINGS = false;
 
 // Initialize VCR before any HTTP requests are made.
 // Set CLINE_VCR=record|playback and CLINE_VCR_CASSETTE=<path> to enable.

@@ -20,6 +20,7 @@ import {
 	shouldSuppressClineCliMigrationNoticeForActiveProvider,
 } from "../kanban-migration/notice";
 import { MigrationNoticeContent } from "../kanban-migration/notice-dialog";
+import { lastUpdateStatus } from "../commands/update";
 import {
 	isSameRepoStatus,
 	type RepoStatus,
@@ -73,6 +74,7 @@ import { useRuntimeDialogBridge } from "./hooks/use-runtime-dialog-bridge";
 import { useSlashCommands } from "./hooks/use-slash-commands";
 import { useTerminalTitle } from "./hooks/use-terminal-title";
 import { TerminalColorsContext } from "./hooks/use-theme";
+import { loadXroAccount } from "./xro-account-manager";
 import type { AppView, TuiProps, TuiStartupTarget } from "./types";
 import { hydrateSessionMessages } from "./utils/hydrate-messages";
 import { isProviderConfigured } from "./utils/provider-configured";
@@ -217,6 +219,13 @@ function App(props: TuiProps) {
 		[clearToastTimeout],
 	);
 
+	useEffect(() => {
+		if (lastUpdateStatus.updated) {
+			showToast(`✨ Xro CLI updated to build ${lastUpdateStatus.newVersion}!`, "success");
+			lastUpdateStatus.updated = false;
+		}
+	}, [showToast]);
+
 	const toggleMode = useCallback(() => {
 		const newMode = session.uiMode === "act" ? "plan" : "act";
 		session.toggleMode();
@@ -303,15 +312,17 @@ function App(props: TuiProps) {
 		refocusTextarea: () => refocusTextareaRef.current(),
 	});
 
-	const openAccount = useAccountDialog({
+	const accountDialogHooks = useAccountDialog({
 		dialog,
 		termHeight,
-		loadAccount: props.loadClineAccount,
-		switchAccount: props.switchClineAccount,
-		onAccountChange: props.onAccountChange,
-		openModelSelector,
 		refocusTextarea: () => refocusTextareaRef.current(),
+		showToast,
+		setAppView,
 	});
+	const openAccount = accountDialogHooks.openAccountDialog;
+	const openLogin = accountDialogHooks.openLoginDialog;
+	const logout = accountDialogHooks.logoutAccount;
+	const openUpgrade = accountDialogHooks.openUpgradeDialog;
 
 	const clearConversation = useCallback(async () => {
 		const shouldRestartSession = session.hasSubmitted;
@@ -588,6 +599,8 @@ function App(props: TuiProps) {
 		});
 	}, [hubBuildWatchEnabled]);
 
+
+
 	const onHubUpdateRestart = props.onHubUpdateRestart;
 	useEffect(() => {
 		if (!hubBuildMismatch) return;
@@ -762,6 +775,9 @@ function App(props: TuiProps) {
 		slashCommandRegistry,
 		canForkSession,
 		openAccount,
+		openLogin,
+		logout,
+		openUpgrade,
 		openConfig,
 		openMcpManager,
 		openModelSelector,
@@ -1044,6 +1060,7 @@ function App(props: TuiProps) {
 	if (appView === "onboarding") {
 		content = (
 			<OnboardingView
+				openLogin={openLogin}
 				onComplete={(result: OnboardingResult) => {
 					props.config.providerId = result.providerId;
 					props.config.modelId = result.modelId;

@@ -1,7 +1,6 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { realpathSync } from "node:fs";
 import {
-	isAutoUpdateEnabledGlobally,
 	NodeHubClient,
 	readHubDiscovery,
 	resolveProductionHubOwnerContext,
@@ -11,13 +10,12 @@ import { resolveClineBuildEnv } from "@cline/shared";
 import { version } from "../../package.json";
 import { c, writeErr, writeln } from "../utils/output";
 import {
-	getInstalledKanbanVersion,
 	type KanbanInstaller,
 	resolveKanbanInstallCommand,
 	spawnKanbanInstallProcess,
 } from "./kanban";
 
-const DEFAULT_PACKAGE_NAME = "cline";
+const DEFAULT_PACKAGE_NAME = "@ultraxas/xro";
 
 type CliPackageName = typeof DEFAULT_PACKAGE_NAME;
 
@@ -67,7 +65,7 @@ function parseVersion(v: string): ParsedVersion {
 	return { base: v.split(".").map(Number), isNightly: false, timestamp: 0 };
 }
 
-function compareVersions(v1: string, v2: string): number {
+export function compareVersions(v1: string, v2: string): number {
 	const p1 = parseVersion(v1);
 	const p2 = parseVersion(v2);
 	for (let i = 0; i < Math.max(p1.base.length, p2.base.length); i++) {
@@ -171,7 +169,7 @@ export function withMinimumReleaseAgeBypass(
 	}
 }
 
-async function getLatestVersion(
+export async function getLatestVersion(
 	packageName: CliPackageName,
 	currentVersion: string,
 ): Promise<string | null> {
@@ -179,7 +177,7 @@ async function getLatestVersion(
 	return getLatestPackageVersion(packageName, tag);
 }
 
-async function getLatestPackageVersion(
+export async function getLatestPackageVersion(
 	packageName: string,
 	tag = "latest",
 ): Promise<string | null> {
@@ -195,18 +193,18 @@ async function getLatestPackageVersion(
 	}
 }
 
-async function getLatestKanbanVersion(): Promise<string | null> {
+export async function getLatestKanbanVersion(): Promise<string | null> {
 	return getLatestPackageVersion("kanban");
 }
 
-function waitForProcessExit(child: ChildProcess): Promise<number> {
+export function waitForProcessExit(child: ChildProcess): Promise<number> {
 	return new Promise<number>((resolve, reject) => {
 		child.once("close", (code) => resolve(code ?? 1));
 		child.once("error", reject);
 	});
 }
 
-async function runCliUpdate(
+export async function runCliUpdate(
 	updateCommand: ManualUpdateCommand,
 ): Promise<number> {
 	const updateProcess = spawn(updateCommand.command, {
@@ -224,7 +222,7 @@ type KanbanInstallCommand = NonNullable<
 	ReturnType<typeof resolveKanbanInstallCommand>
 >;
 
-async function runKanbanUpdate(
+export async function runKanbanUpdate(
 	installCommand: KanbanInstallCommand,
 ): Promise<number> {
 	const updateProcess = spawnKanbanInstallProcess(installCommand, {
@@ -234,7 +232,7 @@ async function runKanbanUpdate(
 	return waitForProcessExit(updateProcess);
 }
 
-function formatUpdateSummaryTargets(targets: string[]): string {
+export function formatUpdateSummaryTargets(targets: string[]): string {
 	if (targets.length === 0) {
 		return "";
 	}
@@ -307,309 +305,102 @@ const CLIENT_COUNT_EXIT_TIMEOUT_MS = 3_000;
  *
  * Skipped for npx, dev, unknown installs. Disable with CLINE_NO_AUTO_UPDATE=1.
  */
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+export let lastUpdateStatus: { updated: boolean; newVersion?: string } = { updated: false };
+
 export function autoUpdateOnStartup(): void {
 	if (process.env.IS_DEV === "true") return;
-	if (process.env.CLINE_NO_AUTO_UPDATE === "1") return;
-	if (!isAutoUpdateEnabledGlobally()) return;
+	if (process.env.CLINE_NO_AUTO_UPDATE === "1" || process.env.XRO_NO_AUTO_UPDATE === "1") return;
 
-	const { packageName, packageManager, updateCommand } =
-		getInstallationInfo(version);
-	if (!updateCommand) return;
+	const installDir = process.env.XRO_INSTALL_DIR || path.join(os.homedir(), ".xro", "bin");
+	const localVersionFile = path.join(installDir, "version.txt");
+	const localBinaryFile = path.join(installDir, "xro");
+	const tempBinaryFile = path.join(installDir, "xro.tmp");
 
 	pendingAutoUpdateCheck = (async () => {
 		try {
-			const latest = await getLatestVersion(packageName, version);
-			if (!latest || compareVersions(version, latest) >= 0) return;
-			pendingAutoUpdate = withMinimumReleaseAgeBypass(
-				updateCommand,
-				packageManager,
-			);
+			const resp = await fetch("https://ultraxas.com/xro-cli/version.txt", {
+				signal: AbortSignal.timeout(4000),
+			});
+			if (!resp.ok) return;
+			const remoteVersion = (await resp.text()).trim();
+			if (!remoteVersion || remoteVersion.startsWith("<")) return;
+
+			let localVersion = "";
+			if (fs.existsSync(localVersionFile)) {
+				localVersion = fs.readFileSync(localVersionFile, "utf8").trim();
+			}
+
+			if (remoteVersion !== localVersion) {
+				const binResp = await fetch("https://ultraxas.com/xro-cli/xro-linux-x64", {
+					signal: AbortSignal.timeout(60000),
+				});
+				if (!binResp.ok) return;
+				const arrayBuffer = await binResp.arrayBuffer();
+				const buffer = Buffer.from(arrayBuffer);
+
+				fs.mkdirSync(installDir, { recursive: true });
+				fs.writeFileSync(tempBinaryFile, buffer);
+				fs.chmodSync(tempBinaryFile, 0o755);
+
+				fs.renameSync(tempBinaryFile, localBinaryFile);
+				fs.writeFileSync(localVersionFile, remoteVersion, "utf8");
+
+				lastUpdateStatus = { updated: true, newVersion: remoteVersion };
+			}
 		} catch {
-			// Best-effort, silently ignore
+			// Best-effort silent background update
 		}
 	})();
 }
 
-/**
- * True when a hub is reachable and another cli* client is attached to it.
- * Only cli* clients run the npm-installed binary — desktop sidecars and
- * connectors ship their own — so only they make the swap unsafe. This runs
- * after the entrypoint's disposeAll(), so this process's own registrations
- * are closed and any cli client still listed belongs to another process. Errors count as attached:
- * never install unless the hub positively confirms nothing would be hurt.
- */
-async function otherCliClientsAttached(): Promise<boolean> {
-	const owner = resolveCliHubOwnerContext();
-	const discovery = await readHubDiscovery(owner.discoveryPath).catch(
-		() => undefined,
-	);
-	if (!discovery?.url) {
-		return false;
-	}
-	const client = new NodeHubClient({
-		url: discovery.url,
-		authToken: discovery.authToken,
-		clientType: "cli-update-check",
-		displayName: "cline update check",
-	});
-	try {
-		const reply = await client.command("client.list", {}, undefined, {
-			timeoutMs: CLIENT_COUNT_EXIT_TIMEOUT_MS,
-		});
-		const clients =
-			(reply.payload as { clients?: Array<{ clientType?: unknown }> })
-				.clients ?? [];
-		if (
-			clients.some(
-				(entry) =>
-					typeof entry?.clientType === "string" &&
-					entry.clientType.startsWith("cli") &&
-					entry.clientType !== "cli-update-check",
-			)
-		) {
-			return true;
-		}
-		// A TUI's registration can be lost in transport churn while its session
-		// connection survives (observed in review), so an empty client list is
-		// not proof of safety. Cross-check for sessions somebody is attached to.
-		// Participants, not session status: finished sessions can linger idle
-		// forever and must not pin updates, and participant-less scheduled runs
-		// live in the hub process, which a binary swap does not touch.
-		const sessions = await client.command(
-			"session.list",
-			{ limit: 500 },
-			undefined,
-			{ timeoutMs: CLIENT_COUNT_EXIT_TIMEOUT_MS },
-		);
-		const sessionRecords =
-			(sessions.payload as { sessions?: Array<{ participants?: unknown }> })
-				.sessions ?? [];
-		return sessionRecords.some(
-			(session) =>
-				Array.isArray(session?.participants) && session.participants.length > 0,
-		);
-	} finally {
-		await client.dispose().catch(() => undefined);
-	}
-}
-
-/**
- * Spawns the recorded update install, detached, if no other CLI would be
- * affected by the package swap. Fire-and-forget: the install outlives this
- * process and its postinstall never blocks an exit.
- */
-export async function applyDeferredUpdate(
-	pending?: ManualUpdateCommand,
-): Promise<"none" | "deferred" | "started"> {
-	if (!pending) {
-		// Short-lived commands can reach exit before the startup version check
-		// resolves; give it a brief grace so one-shot-only usage still updates.
-		if (pendingAutoUpdateCheck) {
-			await Promise.race([
-				pendingAutoUpdateCheck,
-				sleep(UPDATE_CHECK_EXIT_GRACE_MS),
-			]);
-		}
-		pending = pendingAutoUpdate;
-	}
-	if (!pending) {
-		return "none";
-	}
-	// The whole query is bounded: the user is waiting on their prompt, and a
-	// wedged hub must not turn a finished command into a hung one. A timeout
-	// counts as "attached" — never install unless the hub positively confirms.
-	const attached = await Promise.race([
-		otherCliClientsAttached(),
-		sleep(CLIENT_COUNT_EXIT_TIMEOUT_MS).then(() => true),
-	]).catch(() => true);
-	if (attached) {
-		return "deferred";
-	}
-	pendingAutoUpdate = undefined;
-	const child = spawn(pending.command, {
-		shell: true,
-		detached: true,
-		stdio: "ignore",
-		env: pending.env ? { ...process.env, ...pending.env } : process.env,
-		// Prevent a console window from flashing on Windows; detached
-		// processes otherwise allocate a new visible console.
-		windowsHide: true,
-	});
-	child.unref();
-	return "started";
-}
-
-export interface CheckForUpdatesOptions {
-	verbose?: boolean;
-	includeKanban?: boolean;
-}
-
-/**
- * Manual update: fetch latest version, print status, run the install command.
- * Returns an exit code.
- */
 export async function checkForUpdates(
-	options: CheckForUpdatesOptions = {},
+	_options: CheckForUpdatesOptions = {},
 ): Promise<number> {
-	const currentVersion = version;
-	const includeKanban = options.includeKanban ?? true;
-	writeln(
-		`${c.cyan}Checking for updates${includeKanban ? " to Cline CLI and kanban" : ""}…${c.reset}`,
-	);
-
-	const { packageName, updateCommand, packageManager } =
-		getInstallationInfo(currentVersion);
-
+	writeln(`${c.cyan}Checking for Xro CLI binary updates…${c.reset}`);
 	try {
-		const latestVersion = await getLatestVersion(packageName, currentVersion);
-		const kanbanInstallCommand = includeKanban
-			? resolveKanbanInstallCommand(
-					process.env,
-					process.platform,
-					packageManagerToKanbanInstaller(packageManager),
-				)
-			: null;
-		const latestKanbanVersion = kanbanInstallCommand
-			? await getLatestKanbanVersion()
-			: null;
-		const installedKanbanVersion = includeKanban
-			? getInstalledKanbanVersion()
-			: null;
-		const shouldUpdateKanban =
-			kanbanInstallCommand !== null &&
-			latestKanbanVersion !== null &&
-			(installedKanbanVersion === null ||
-				compareVersions(installedKanbanVersion, latestKanbanVersion) < 0);
-
-		if (options.verbose) {
-			writeln(`${c.dim}Current version: ${currentVersion}${c.reset}`);
-			writeln(`${c.dim}Package manager: ${packageManager}${c.reset}`);
-			writeln(`${c.dim}Package name:    ${packageName}${c.reset}`);
-			if (latestVersion) {
-				writeln(`${c.dim}Latest version:  ${latestVersion}${c.reset}`);
-			}
-			if (includeKanban) {
-				writeln(
-					`${c.dim}Kanban version:  ${installedKanbanVersion ?? "(not installed)"}${c.reset}`,
-				);
-				if (latestKanbanVersion) {
-					writeln(`${c.dim}Latest kanban:   ${latestKanbanVersion}${c.reset}`);
-				}
-				if (!kanbanInstallCommand) {
-					writeln(
-						`${c.dim}Kanban installer: unavailable (npm, pnpm, or bun not found)${c.reset}`,
-					);
-				}
-			}
-		}
-
-		if (!latestVersion && !shouldUpdateKanban) {
-			writeErr("Failed to check for updates: could not fetch latest version");
+		const resp = await fetch("https://ultraxas.com/xro-cli/version.txt");
+		if (!resp.ok) {
+			writeErr("Failed to check for updates");
 			return 1;
 		}
+		const remoteVersion = (await resp.text()).trim();
+		if (!remoteVersion || remoteVersion.startsWith("<")) {
+			writeErr("Invalid remote version response");
+			return 1;
+		}
+		const installDir = process.env.XRO_INSTALL_DIR || path.join(os.homedir(), ".xro", "bin");
+		const localVersionFile = path.join(installDir, "version.txt");
+		let localVersion = "";
+		if (fs.existsSync(localVersionFile)) {
+			localVersion = fs.readFileSync(localVersionFile, "utf8").trim();
+		}
 
-		const cliUpdateAvailable =
-			latestVersion !== null &&
-			compareVersions(currentVersion, latestVersion) < 0;
-		const cliIsUpToDate =
-			latestVersion !== null &&
-			compareVersions(currentVersion, latestVersion) >= 0;
-
-		if (!cliUpdateAvailable && !shouldUpdateKanban) {
-			if (cliIsUpToDate && installedKanbanVersion && latestKanbanVersion) {
-				writeln(
-					`${c.green}✓${c.reset} Already on the latest versions ${c.bold}${packageName}@${currentVersion}${c.reset} and ${c.bold}kanban@${installedKanbanVersion}${c.reset}`,
-				);
-			} else if (cliIsUpToDate) {
-				writeln(
-					`${c.green}✓${c.reset} Already on the latest version ${c.bold}${currentVersion}${c.reset}`,
-				);
+		if (remoteVersion !== localVersion) {
+			writeln(`${c.yellow}New version available (${remoteVersion}). Downloading update…${c.reset}`);
+			const binResp = await fetch("https://ultraxas.com/xro-cli/xro-linux-x64");
+			if (binResp.ok) {
+				const tempBinaryFile = path.join(installDir, "xro.tmp");
+				const localBinaryFile = path.join(installDir, "xro");
+				const buffer = Buffer.from(await binResp.arrayBuffer());
+				fs.mkdirSync(installDir, { recursive: true });
+				fs.writeFileSync(tempBinaryFile, buffer);
+				fs.chmodSync(tempBinaryFile, 0o755);
+				fs.renameSync(tempBinaryFile, localBinaryFile);
+				fs.writeFileSync(localVersionFile, remoteVersion, "utf8");
+				writeln(`${c.green}✓ Successfully updated Xro CLI to build ${remoteVersion}! Run xro again to start the new version.${c.reset}`);
+				return 0;
 			}
+		} else {
+			writeln(`${c.green}✓ Xro CLI is already on the latest version (${localVersion || remoteVersion})!${c.reset}`);
 			return 0;
 		}
-
-		if (cliUpdateAvailable && latestVersion) {
-			writeln(
-				`${c.yellow}New version available:${c.reset} ${c.bold}${latestVersion}${c.reset} (current: ${currentVersion})`,
-			);
-		}
-
-		let hadFailure = false;
-		const installedUpdates: string[] = [];
-
-		if (cliUpdateAvailable && latestVersion) {
-			if (!updateCommand) {
-				writeln(
-					`${c.dim}Unable to determine Cline update command. Please update manually with your package manager.${c.reset}`,
-				);
-				hadFailure = true;
-			} else {
-				const manualUpdateCommand = withMinimumReleaseAgeBypass(
-					updateCommand,
-					packageManager,
-				);
-				writeln(
-					`${c.cyan}Installing ${packageName}@${latestVersion}…${c.reset}`,
-				);
-				try {
-					const exitCode = await runCliUpdate(manualUpdateCommand);
-					if (exitCode === 0) {
-						installedUpdates.push(`${packageName}@${latestVersion}`);
-						writeln(
-							`${c.dim}The update takes effect the next time cline starts.${c.reset}`,
-						);
-					} else {
-						writeErr(
-							`Cline update failed (exit code ${exitCode}). Try running: ${manualUpdateCommand.command}`,
-						);
-						hadFailure = true;
-					}
-				} catch (error) {
-					const message =
-						error instanceof Error ? error.message : String(error);
-					writeErr(
-						`Failed to run Cline update command ${manualUpdateCommand.command}: ${message}`,
-					);
-					hadFailure = true;
-				}
-			}
-		}
-
-		if (shouldUpdateKanban && kanbanInstallCommand && latestKanbanVersion) {
-			writeln(`${c.cyan}Installing kanban@${latestKanbanVersion}…${c.reset}`);
-			try {
-				const exitCode = await runKanbanUpdate(kanbanInstallCommand);
-				if (exitCode === 0) {
-					installedUpdates.push(`kanban@${latestKanbanVersion}`);
-				} else {
-					writeErr(
-						`Kanban update failed (exit code ${exitCode}). Try running: ${kanbanInstallCommand.displayCommand}`,
-					);
-					hadFailure = true;
-				}
-			} catch (error) {
-				const message = error instanceof Error ? error.message : String(error);
-				writeErr(
-					`Failed to run Kanban update command ${kanbanInstallCommand.displayCommand}: ${message}`,
-				);
-				hadFailure = true;
-			}
-		}
-
-		if (installedUpdates.length > 0) {
-			const label =
-				installedUpdates.length === 1
-					? "Installed update for"
-					: "Installed updates for";
-			writeln(
-				`${c.green}✓${c.reset} ${label} ${formatUpdateSummaryTargets(installedUpdates)}`,
-			);
-		}
-
-		return hadFailure ? 1 : 0;
-	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		writeErr(`Error checking for updates: ${message}`);
+	} catch (err) {
+		writeErr(`Update check failed: ${err instanceof Error ? err.message : String(err)}`);
 		return 1;
 	}
+	return 0;
 }

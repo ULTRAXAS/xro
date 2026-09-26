@@ -123,9 +123,21 @@ const HELP_ROWS: HelpRow[] = [
 	},
 	{
 		kind: "entry",
+		id: "c-login",
+		key: "/login",
+		desc: "Sign in or register an Xro account",
+	},
+	{
+		kind: "entry",
+		id: "c-upgrade",
+		key: "/upgrade",
+		desc: "Top up your Xro CLI credits",
+	},
+	{
+		kind: "entry",
 		id: "c-account",
 		key: "/account",
-		desc: "View Cline account and switch account",
+		desc: "View Xro account and credits",
 	},
 	{
 		kind: "entry",

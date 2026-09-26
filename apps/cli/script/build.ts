@@ -68,11 +68,18 @@ const allTargets: {
 	{ os: "win32", arch: "arm64" },
 ];
 
-const targets = buildOptions.single
-	? allTargets.filter(
-			(item) => item.os === process.platform && item.arch === process.arch,
-		)
-	: allTargets;
+// XRO_BUILD_TARGET (e.g. "linux-arm64") builds exactly one target regardless
+// of host platform, for cross-compiling a single non-host binary (e.g.
+// building an arm64 binary on an x64 dev machine) without needing --single's
+// host-platform match or a full --install-native-variants multi-platform run.
+const forcedTarget = process.env.XRO_BUILD_TARGET;
+const targets = forcedTarget
+	? allTargets.filter((item) => `${item.os}-${item.arch}` === forcedTarget)
+	: buildOptions.single
+		? allTargets.filter(
+				(item) => item.os === process.platform && item.arch === process.arch,
+			)
+		: allTargets;
 
 const opentuiVersion = pkg.dependencies["@opentui/core"];
 const optionsError = validateBuildOptions({
@@ -103,7 +110,7 @@ if (!buildOptions.skipSdkBuild) {
 	await $`bun run build:sdk`.cwd(rootDir);
 
 	console.log("Building CLI bundle...");
-	await $`bun -F @cline/cli build`.cwd(rootDir);
+	await $`bun -F @ultraxas/xro build`.cwd(rootDir);
 }
 
 const hubWebviewSource = join(cliDir, "../cline-hub/src/webview");
@@ -167,6 +174,11 @@ function getBunTarget(
 	item: (typeof allTargets)[number],
 ): Bun.Build.CompileTarget {
 	const targetOs = item.os === "win32" ? "windows" : item.os;
+	// XRO_BUILD_MUSL builds a musl-linked binary for the same os/arch, for
+	// environments without glibc (e.g. Termux on Android, Alpine).
+	if (item.os === "linux" && process.env.XRO_BUILD_MUSL === "1") {
+		return `bun-linux-${item.arch}-musl` as Bun.Build.CompileTarget;
+	}
 	return `bun-${targetOs}-${item.arch}` as Bun.Build.CompileTarget;
 }
 
@@ -228,7 +240,7 @@ async function buildCompiledBinary(input: {
 for (const item of targets) {
 	// npm treats "win32" specially in os field, but for package naming use "windows"
 	const displayOs = item.os === "win32" ? "windows" : item.os;
-	const name = `@cline/cli-${displayOs}-${item.arch}`;
+	const name = `@ultraxas/cli-${displayOs}-${item.arch}`;
 	const dirName = `cli-${displayOs}-${item.arch}`;
 	const binaryName = item.os === "win32" ? "xro.exe" : "xro";
 	const bunTarget = getBunTarget(item);

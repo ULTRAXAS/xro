@@ -19,6 +19,9 @@ export function useLocalCommandActions(input: {
 	slashCommandRegistry: SlashCommandRegistry;
 	canForkSession: boolean;
 	openAccount: () => void;
+	openLogin?: () => void;
+	logout?: () => void;
+	openUpgrade?: () => void;
 	openConfig: (options?: OpenConfigOptions) => void;
 	openMcpManager: () => Promise<boolean>;
 	openModelSelector: () => void;
@@ -225,6 +228,9 @@ export function useLocalCommandActions(input: {
 				isRunning: session.isRunning,
 				invocation,
 				openAccount,
+				openLogin: input.openLogin,
+				logout: input.logout,
+				openUpgrade: input.openUpgrade,
 				openConfig,
 				openMcpManager,
 				openModelSelector,
@@ -255,6 +261,9 @@ export function useLocalCommandActions(input: {
 			runFork,
 			session.isRunning,
 			slashCommandRegistry,
+			input.openLogin,
+			input.logout,
+			input.openUpgrade,
 		],
 	);
 

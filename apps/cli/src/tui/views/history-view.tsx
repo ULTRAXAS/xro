@@ -361,7 +361,7 @@ function HistoryListContent({
 								paddingX={1}
 								backgroundColor={isSelected ? palette.selection : undefined}
 							>
-								<text fg={isSelected ? palette.textOnSelection : undefined}>
+								<text fg={isSelected ? palette.textOnSelection : palette.text}>
 									{isSelected ? "\u276f " : "  "}
 									{option.label}
 								</text>
@@ -443,7 +443,7 @@ function HistoryListContent({
 								{isSel ? "\u276f " : "  "}
 							</text>
 							<text
-								fg={isSel ? palette.textOnSelection : undefined}
+								fg={isSel ? palette.textOnSelection : palette.text}
 								flexGrow={1}
 							>
 								{title}

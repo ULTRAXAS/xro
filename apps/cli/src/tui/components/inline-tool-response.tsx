@@ -220,7 +220,7 @@ function ToolApprovalResponse(
 
 	return (
 		<Shell
-			title="Cline needs permission"
+			title="Xro needs permission"
 			accent={props.accent}
 			inputBackground={props.inputBackground}
 			inputForeground={props.inputForeground}
@@ -400,7 +400,7 @@ function AskQuestionResponse(
 
 	return (
 		<Shell
-			title="Cline is asking a question"
+			title="Xro is asking a question"
 			accent={props.accent}
 			inputBackground={props.inputBackground}
 			inputForeground={props.inputForeground}

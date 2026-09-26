@@ -1,91 +1,73 @@
 import type { ChoiceContext } from "@opentui-ui/dialog";
 import type { DialogActions } from "@opentui-ui/dialog/react";
 import { useCallback } from "react";
-import open from "../../utils/open";
-import type { ClineAccountSnapshot } from "../cline-account";
 import {
-	type AccountDialogAction,
-	AccountDialogContent,
-} from "../components/dialogs/account-dialog";
-import {
-	OAuthLoginContent,
-	type OAuthLoginResult,
-} from "../components/dialogs/provider-picker";
-import type { OpenModelSelectorOptions } from "./use-model-selector";
+	XroAccountOverviewContent,
+	XroUpgradeDialogContent,
+} from "../components/dialogs/xro-account-dialog";
+import { XroLoginDialogContent } from "../components/dialogs/xro-login-dialog";
+import { clearXroAccount, type XroAccountConfig } from "../xro-account-manager";
 
 export function useAccountDialog(opts: {
 	dialog: DialogActions;
 	termHeight: number;
-	loadAccount: () => Promise<ClineAccountSnapshot>;
-	switchAccount: (organizationId?: string | null) => Promise<void>;
-	onAccountChange?: () => Promise<void>;
-	openModelSelector: (options?: OpenModelSelectorOptions) => Promise<void>;
 	refocusTextarea: () => void;
+	showToast?: (message: string, variant?: "info" | "success" | "error") => void;
+	setAppView?: (view: "home" | "chat" | "onboarding") => void;
 }) {
-	const {
-		dialog,
-		termHeight,
-		loadAccount,
-		switchAccount,
-		onAccountChange,
-		openModelSelector,
-		refocusTextarea,
-	} = opts;
+	const { dialog, termHeight, refocusTextarea, showToast, setAppView } = opts;
 
-	const openAccountDialog = useCallback(async () => {
-		const action = await dialog.choice<AccountDialogAction>({
+	const openLoginDialog = useCallback(async () => {
+		const account = await dialog.choice<XroAccountConfig | null>({
 			size: "large",
 			style: { maxHeight: termHeight - 2 },
-			closeOnEscape: false,
-			content: (ctx: ChoiceContext<AccountDialogAction>) => (
-				<AccountDialogContent
-					{...ctx}
-					loadAccount={loadAccount}
-					switchAccount={switchAccount}
-					onAccountChange={onAccountChange}
-				/>
+			closeOnEscape: true,
+			content: (ctx: ChoiceContext<XroAccountConfig | null>) => (
+				<XroLoginDialogContent {...ctx} />
 			),
 		});
-		if (action === "change-model") {
-			await openModelSelector({ onCancel: openAccountDialog });
-			return;
-		}
-		if (action === "change-provider") {
-			await openModelSelector({
-				onCancel: openAccountDialog,
-				startWithProviderChange: true,
-			});
-			return;
-		}
-		if (action === "learn-more") {
-			await open("https://cline.bot", { wait: false }).catch(() => {});
-			refocusTextarea();
-			return;
-		}
-		if (action === "login") {
-			const saved = await dialog.choice<OAuthLoginResult>({
-				style: { maxHeight: termHeight - 2 },
-				closeOnEscape: false,
-				content: (ctx: ChoiceContext<OAuthLoginResult>) => (
-					<OAuthLoginContent {...ctx} providerId="cline" providerName="Cline" />
-				),
-			});
-			if (saved === true) {
-				await onAccountChange?.();
-				await openAccountDialog();
-				return;
-			}
-		}
 		refocusTextarea();
-	}, [
-		dialog,
-		loadAccount,
-		onAccountChange,
-		openModelSelector,
-		refocusTextarea,
-		switchAccount,
-		termHeight,
-	]);
+		return account;
+	}, [dialog, refocusTextarea, termHeight]);
 
-	return openAccountDialog;
+	const logoutAccount = useCallback(async () => {
+		clearXroAccount();
+		if (showToast) {
+			showToast("Logged out of Xro account", "info");
+		}
+		if (setAppView) {
+			setAppView("onboarding");
+		}
+	}, [setAppView, showToast]);
+
+	const openUpgradeDialog = useCallback(async () => {
+		await dialog.choice<void>({
+			size: "large",
+			style: { maxHeight: termHeight - 2 },
+			closeOnEscape: true,
+			content: (ctx: ChoiceContext<void>) => <XroUpgradeDialogContent {...ctx} />,
+		});
+		refocusTextarea();
+	}, [dialog, refocusTextarea, termHeight]);
+
+	const openAccountDialog = useCallback(async () => {
+		const choice = await dialog.choice<"login" | "upgrade" | "close">({
+			size: "large",
+			style: { maxHeight: termHeight - 2 },
+			closeOnEscape: true,
+			content: (ctx: ChoiceContext<"login" | "upgrade" | "close">) => (
+				<XroAccountOverviewContent {...ctx} />
+			),
+		});
+
+		if (choice === "login") {
+			await openLoginDialog();
+		} else if (choice === "upgrade") {
+			await openUpgradeDialog();
+		} else {
+			refocusTextarea();
+		}
+	}, [dialog, openLoginDialog, openUpgradeDialog, refocusTextarea, termHeight]);
+
+	return { openAccountDialog, openLoginDialog, logoutAccount, openUpgradeDialog };
 }

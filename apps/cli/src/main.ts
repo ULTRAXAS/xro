@@ -143,7 +143,10 @@ function startupTargetTakesPrecedenceOverMigrationNotice(
 	return target === "config" || target === "history";
 }
 
+import { syncXroAccountToProviders } from "./tui/xro-account-manager";
+
 export async function runCli(): Promise<void> {
+	syncXroAccountToProviders();
 	registerClineClientIdentity("cline-cli");
 	installStreamErrorGuards();
 	autoUpdateOnStartup();
@@ -166,6 +169,48 @@ export async function runCli(): Promise<void> {
 
 	const normalizedArgs = normalizeAutoApproveArgs(cliArgs);
 
+	const rawFirstArg = cliArgs[0]?.toLowerCase();
+	if (rawFirstArg === "login") {
+		const { loadXroAccount, registerOrLoginXroUser } = await import("./tui/xro-account-manager");
+		const existing = loadXroAccount();
+		if (existing) {
+			writeln(`${c.green}Already logged in as ${existing.email}!${c.reset}`);
+			writeln(`${c.dim}Credits available: ${existing.credits}${c.reset}`);
+			process.exitCode = 0;
+			return;
+		}
+		if (!process.stdin.isTTY) {
+			writeErr("xro login requires an interactive terminal.");
+			process.exitCode = 1;
+			return;
+		}
+		writeln(`${c.cyan}🔒 Xro Account Login / Registration${c.reset}`);
+		writeln(`${c.dim}Enter your email and password below (new users receive 200 free credits).${c.reset}\n`);
+		const readline = await import("node:readline");
+		const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+		const ask = (q: string): Promise<string> => new Promise((res) => rl.question(q, res));
+		try {
+			const email = (await ask("Email: ")).trim();
+			const password = (await ask("Password: ")).trim();
+			rl.close();
+			if (!email || !password) {
+				writeErr("Email and password cannot be empty.");
+				process.exitCode = 1;
+				return;
+			}
+			writeln(`${c.dim}Authenticating with Xro Cloud...${c.reset}`);
+			const account = await registerOrLoginXroUser(email, password);
+			writeln(`${c.green}✅ Successfully logged in as ${account.email}!${c.reset}`);
+			process.exitCode = 0;
+			return;
+		} catch (err) {
+			rl.close();
+			writeErr(`Authentication failed: ${err instanceof Error ? err.message : String(err)}`);
+			process.exitCode = 1;
+			return;
+		}
+	}
+
 	// Subcommand routing via Commander
 	const ctx: {
 		exitCode?: number;
@@ -181,7 +226,57 @@ export async function runCli(): Promise<void> {
 	// Default action handles non-subcommand args (e.g. prompt text)
 	program.action(() => {});
 
-	// Auth subcommand: defines its own options so commander parses them
+	program
+		.command("login")
+		.description("Log in to your Xro account")
+		.action(async () => {
+			const { loadXroAccount, registerOrLoginXroUser } = await import("./tui/xro-account-manager");
+			const existing = loadXroAccount();
+			if (existing) {
+				writeln(`${c.green}Already logged in as ${existing.email}!${c.reset}`);
+				writeln(`${c.dim}Credits available: ${existing.credits}${c.reset}`);
+				ctx.exitCode = 0;
+				return;
+			}
+			if (!process.stdin.isTTY) {
+				writeErr("xro login requires an interactive terminal.");
+				ctx.exitCode = 1;
+				return;
+			}
+			writeln(`${c.cyan}🔒 Xro Account Login / Registration${c.reset}`);
+			writeln(`${c.dim}Enter your email and password below (new users receive 200 free credits).${c.reset}\n`);
+			const readline = await import("node:readline");
+			const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+			const ask = (q: string): Promise<string> => new Promise((res) => rl.question(q, res));
+			try {
+				const email = (await ask("Email: ")).trim();
+				const password = (await ask("Password: ")).trim();
+				rl.close();
+				if (!email || !password) {
+					writeErr("Email and password cannot be empty.");
+					ctx.exitCode = 1;
+					return;
+				}
+				writeln(`${c.dim}Authenticating with Xro Cloud...${c.reset}`);
+				const account = await registerOrLoginXroUser(email, password);
+				writeln(`${c.green}✅ Successfully logged in as ${account.email}!${c.reset}`);
+				ctx.exitCode = 0;
+			} catch (err) {
+				rl.close();
+				writeErr(`Authentication failed: ${err instanceof Error ? err.message : String(err)}`);
+				ctx.exitCode = 1;
+			}
+		});
+
+	program
+		.command("logout")
+		.description("Log out of your active Xro account")
+		.action(async () => {
+			const { clearXroAccount } = await import("./tui/xro-account-manager");
+			clearXroAccount();
+			writeln(`${c.green}✅ Logged out of Xro account!${c.reset}`);
+			ctx.exitCode = 0;
+		});
 	// directly. The short flags -p/-m intentionally shadow the root's -p (plan)
 	// and -m (model); commander scopes options per-command so there is no
 	// conflict.
@@ -282,7 +377,7 @@ export async function runCli(): Promise<void> {
 
 	const pluginCmd = program
 		.command("plugin")
-		.description("Manage Cline Plugins")
+		.description("Manage Xro Plugins")
 		.action(() => {
 			pluginCmd.help();
 		});
@@ -290,7 +385,7 @@ export async function runCli(): Promise<void> {
 		.command("install")
 		.alias("i")
 		.description(
-			"Install a Cline Plugin from an official keyword, npm, git, URL, or a local path",
+			"Install an Xro Plugin from an official keyword, npm, git, URL, or a local path",
 		)
 		.argument(
 			"<source>",
@@ -300,7 +395,7 @@ export async function runCli(): Promise<void> {
 		.option("--git", "Treat source as a git repository")
 		.option("--force", "Replace an existing install for the same source")
 		.option("--json", "Output as JSON")
-		.option("--cwd <path>", "Install to <path>/.cline/plugins")
+		.option("--cwd <path>", "Install to <path>/.xro/plugins")
 		.action(async (source: string) => {
 			const opts = pluginInstallCmd.opts<{
 				npm?: boolean;
@@ -332,12 +427,12 @@ export async function runCli(): Promise<void> {
 		.command("uninstall")
 		.alias("remove")
 		.alias("rm")
-		.description("Uninstall a Cline Plugin by name or path")
+		.description("Uninstall an Xro Plugin by name or path")
 		.argument("<name>", "plugin package name, installed slug, or plugin path")
 		.option("--json", "Output as JSON")
 		.option(
 			"--cwd <path>",
-			"Search <path>/.cline/plugins before global plugins",
+			"Search <path>/.xro/plugins before global plugins",
 		)
 		.action(async (name: string) => {
 			const opts = pluginUninstallCmd.opts<{
@@ -354,19 +449,19 @@ export async function runCli(): Promise<void> {
 		});
 	const skillCmd = program
 		.command("skill")
-		.description("Manage Cline Skills via the open skills CLI (npx skills)")
+		.description("Manage Xro Skills via the open skills CLI (npx skills)")
 		.allowUnknownOption()
 		.passThroughOptions()
 		.argument("[args...]", "arguments forwarded to the skills CLI")
 		.addHelpText(
 			"after",
 			"\nForwards to the open skills CLI via npx. Examples:\n" +
-				"  cline skill add <owner/repo>       Add a skill into Cline\n" +
-				"  cline skill install <owner/repo>   Alias for add\n" +
-				"  cline skill list                   List installed skills\n" +
-				"  cline skill remove                 Remove installed skills\n" +
-				"  cline skill uninstall              Alias for remove\n" +
-				"\nadd/install and remove/uninstall default to '--agent cline' unless you pass your own --agent.\n" +
+				"  xro skill add <owner/repo>       Add a skill into Xro\n" +
+				"  xro skill install <owner/repo>   Alias for add\n" +
+				"  xro skill list                   List installed skills\n" +
+				"  xro skill remove                 Remove installed skills\n" +
+				"  xro skill uninstall              Alias for remove\n" +
+				"\nadd/install and remove/uninstall default to '--agent xro' unless you pass your own --agent.\n" +
 				"Run 'npx skills --help' for the full command reference.",
 		)
 		.action(async () => {
@@ -377,7 +472,7 @@ export async function runCli(): Promise<void> {
 	const connectCmd = program
 		.command("connect")
 		.description("Connect to an external channel")
-		.argument("[channel]", "Channel to connect Cline CLI to")
+		.argument("[channel]", "Channel to connect Xro CLI to")
 		.option("--stop", "Kill all current channel connections")
 		.option("--restart", "Restart a channel connection")
 		.option(
@@ -664,7 +759,7 @@ export async function runCli(): Promise<void> {
 
 	program
 		.command("version")
-		.description("Show Cline CLI version number")
+		.description("Show Xro CLI version number")
 		.action(async () => {
 			const { showVersion } = await import("./commands/help");
 			showVersion();
@@ -994,6 +1089,8 @@ export async function runCli(): Promise<void> {
 			(!process.stdin.isTTY && !args.interactive);
 		const isInteractive = (args.interactive || !args.prompt) && !isHeadless;
 
+
+
 		if (!apiKey && isOAuthProvider(provider) && !isHeadless && !isInteractive) {
 			const oauthResult = await ensureOAuthProviderApiKey({
 				providerId: provider,
@@ -1135,6 +1232,17 @@ export async function runCli(): Promise<void> {
 				`${c.dim}[provider-settings] failed to persist selection (${message})${c.reset}`,
 			);
 		}
+		// Check Xro account login right before returning CLI responses
+		const ensureAuthenticated = async () => {
+			const { loadXroAccount } = await import("./tui/xro-account-manager");
+			if (!loadXroAccount()) {
+				writeErr("🔒 Authentication required: You must log in to your Xro account first.\nRun 'xro login' or launch 'xro' to open the interactive setup screen.");
+				process.exitCode = 1;
+				return false;
+			}
+			return true;
+		};
+
 		// Check for piped input (skip when stdin is not a real pipe/file, e.g. headless CI).
 		// Guard `isTTY` first so we never block on fd 0 when stdin is a terminal (and avoid
 		// redundant fstat work). `stdinHasPipedInput` also checks `isTTY`, but callers may hit
@@ -1147,6 +1255,7 @@ export async function runCli(): Promise<void> {
 			const pipedInput = Buffer.concat(chunks).toString("utf-8").trim();
 
 			if (pipedInput) {
+				if (!(await ensureAuthenticated())) return;
 				const prompt = args.prompt
 					? `${args.prompt}\n\n${pipedInput}`
 					: pipedInput;
@@ -1219,6 +1328,7 @@ export async function runCli(): Promise<void> {
 		}
 
 		// Single prompt mode
+		if (!(await ensureAuthenticated())) return;
 		const rewrittenTeamPrompt = rewriteTeamPrompt(args.prompt);
 		if (rewrittenTeamPrompt.kind === "usage") {
 			writeln(TEAM_COMMAND_USAGE);
@@ -1229,10 +1339,6 @@ export async function runCli(): Promise<void> {
 				? rewrittenTeamPrompt.prompt
 				: args.prompt;
 
-		// Zen mode: dispatch the task to the background hub and exit. The CLI
-		// does not stay connected to stream output; completion is delivered via
-		// the hub's existing ui.notify broadcast (picked up by the menubar app
-		// when installed).
 		if (isZenMode) {
 			const { runZen } = await import("./runtime/run-zen");
 			await runZen(effectivePrompt, config, userInstructionService);
@@ -1240,7 +1346,6 @@ export async function runCli(): Promise<void> {
 		}
 
 		await runAgent(effectivePrompt, config, userInstructionService);
-		// Exit once agent is done in non-interactive mode
 		return;
 	} finally {
 		stopUserInstructionService();

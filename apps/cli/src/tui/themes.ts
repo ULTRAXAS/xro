@@ -289,32 +289,30 @@ export function getThemeModeAccent(theme: ResolvedTheme, mode: string): string {
  * set for readable dialog content.
  */
 export function getDialogAccents(theme: ResolvedTheme): ThemeAccents {
-	return theme.variant === "dark" ? theme.accents : baseAccents.dark;
+	return theme.accents;
 }
 
 /** Neutral dark panel used when no theme background is available to derive
- * a surface from (auto theme on an undetected terminal, light themes). */
+ * a surface from (auto theme on an undetected terminal). */
 export const DEFAULT_DIALOG_SURFACE = "#262626";
 
 /**
- * Background for dialog panels. Dark themes get their own background lifted
- * one perceptual step (OKLAB), so the panel keeps the theme's hue and reads
- * as a raised surface of the same world. Light themes and undetectable
- * backgrounds keep the neutral dark panel that matches the dark accent
- * fallback in getDialogAccents.
+ * Background for dialog panels. Follows the active theme variant so light theme
+ * dialogs use a light surface background and dark theme dialogs use a dark surface.
  */
 export function getDialogSurface(theme: ResolvedTheme): string {
-	if (theme.variant !== "dark" || !theme.background) {
+	if (theme.variant === "light") {
+		return "#ffffff";
+	}
+	if (!theme.background) {
 		return DEFAULT_DIALOG_SURFACE;
 	}
 	return getDialogSurfaceBackground(theme.background);
 }
 
 /**
- * Colors for content rendered on the always-dark dialog surface, following
- * the active theme's accents (see getDialogAccents). Mirrors the shape of
- * the static `palette` so dialog components can consume it as a drop-in
- * replacement that re-resolves on every theme change (including previews).
+ * Colors for content rendered on the dialog surface, following
+ * the active theme's accents.
  */
 export interface DialogPalette extends ThemeAccents {
 	selection: string;
@@ -322,6 +320,8 @@ export interface DialogPalette extends ThemeAccents {
 	muted: string;
 	/** Panel background the dialog content is rendered on. */
 	surface: string;
+	/** Default text color for unselected text on the dialog surface. */
+	text: string;
 }
 
 export function getDialogPalette(theme: ResolvedTheme): DialogPalette {
@@ -334,8 +334,9 @@ export function getDialogPalette(theme: ResolvedTheme): DialogPalette {
 			relativeLuminance(selection) > WHITE_TEXT_LUMINANCE_CUTOFF
 				? "#000000"
 				: "#ffffff",
-		muted: "gray",
+		muted: theme.variant === "light" ? "#57606a" : "gray",
 		surface: getDialogSurface(theme),
+		text: theme.variant === "light" ? "#1a1a1a" : "#e8eaed",
 	};
 }
 

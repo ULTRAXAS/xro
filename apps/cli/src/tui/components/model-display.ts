@@ -19,7 +19,8 @@ function lookupModelInfo(
 // entry under the openai-compatible provider (custom endpoints, shared
 // distribution builds, etc). Keyed by the exact model id sent to the API.
 const CUSTOM_MODEL_DISPLAY_NAMES: Record<string, string> = {
-	"xiaomi/mimo-v2.6-pro": "Xro 8.4",
+	"xro-8.5-pro": "Xro 8.5",
+	"xro-8.5": "Xro 8.5",
 };
 
 export function resolveModelDisplayName(config: {
@@ -32,7 +33,10 @@ export function resolveModelDisplayName(config: {
 	const info = lookupModelInfo(config.modelId, config.knownModels);
 	const modelIdTail = config.modelId.split("/").pop() ?? config.modelId;
 	let displayName =
-		info?.name ?? CUSTOM_MODEL_DISPLAY_NAMES[config.modelId] ?? modelIdTail;
+		CUSTOM_MODEL_DISPLAY_NAMES[config.modelId] ??
+		CUSTOM_MODEL_DISPLAY_NAMES[modelIdTail] ??
+		info?.name ??
+		modelIdTail;
 	if (config.thinking && config.reasoningEffort) {
 		displayName = `${displayName} (${config.reasoningEffort})`;
 	}

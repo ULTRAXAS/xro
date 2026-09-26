@@ -10,6 +10,8 @@ import {
 	resolveModelDisplayName,
 	resolveModelMaxInputTokens,
 } from "./model-display";
+import { useCallback, useEffect, useState } from "react";
+import { fetchLiveXroAccount, loadXroAccount } from "../xro-account-manager";
 
 export { resolveModelDisplayName, resolveModelMaxInputTokens };
 
@@ -46,7 +48,16 @@ function formatCost(cost: number): string {
 	return `$${cost.toFixed(2)}`;
 }
 
-function formatCostText(providerId: string, totalCost: number): string {
+function formatCostText(providerId: string, totalCost: number, liveCredits?: number | null): string {
+	if (typeof liveCredits === "number") {
+		return `${liveCredits.toLocaleString(undefined, { maximumFractionDigits: 1 })} credits`;
+	}
+
+	const xroAccount = loadXroAccount();
+	if (xroAccount && typeof xroAccount.credits === "number") {
+		return `${xroAccount.credits.toLocaleString(undefined, { maximumFractionDigits: 1 })} credits`;
+	}
+
 	// Subscription providers (ClinePass) have no per-use cost worth surfacing.
 	if (shouldShowCliUsageCoveredBySubscription(providerId)) {
 		return "";
@@ -63,9 +74,10 @@ export function formatStatusBarUsageText(input: {
 	totalTokens: number;
 	totalCost: number;
 	providerId: string;
+	liveCredits?: number | null;
 }): string {
 	const tokens = `(${input.totalTokens.toLocaleString()})`;
-	const costText = formatCostText(input.providerId, input.totalCost);
+	const costText = formatCostText(input.providerId, input.totalCost, input.liveCredits);
 
 	if (!costText) {
 		return tokens;
@@ -107,6 +119,33 @@ export function StatusBar(props: StatusBarProps) {
 		onToggleMode,
 	} = props;
 
+	const [activeAccount, setActiveAccount] = useState<ReturnType<typeof loadXroAccount>>(() => loadXroAccount());
+	const [liveCredits, setLiveCredits] = useState<number | null>(() => {
+		const account = loadXroAccount();
+		return account ? account.credits : null;
+	});
+
+	useEffect(() => {
+		const account = loadXroAccount();
+		setActiveAccount(account);
+		if (!account?.apiKey) return;
+
+		const checkCredits = () => {
+			fetchLiveXroAccount(account.apiKey).then((updated) => {
+				if (updated) {
+					setActiveAccount(updated);
+					if (typeof updated.credits === "number") {
+						setLiveCredits(updated.credits);
+					}
+				}
+			}).catch(() => {});
+		};
+
+		checkCredits();
+		const interval = setInterval(checkCredits, 5_000);
+		return () => clearInterval(interval);
+	}, []);
+
 	const { width } = useTerminalDimensions();
 	const theme = useTheme();
 	const defaultFg = theme.defaultForeground;
@@ -138,6 +177,7 @@ export function StatusBar(props: StatusBarProps) {
 		totalTokens,
 		totalCost,
 		providerId: props.providerId,
+		liveCredits,
 	});
 	const contextText = bar
 		? ` ${bar.filled}${bar.empty} ${usageText}`
@@ -216,16 +256,26 @@ export function StatusBar(props: StatusBarProps) {
 				)}
 			</text>
 
-			{autoApproveAll ? (
-				<text fg={defaultFg}>
-					<span fg={successColor}>
-						{"\u23f5\u23f5"} Auto-approve all enabled
-					</span>
-					<span fg="gray"> (Shift+Tab)</span>
+			<box flexDirection="row" justifyContent="space-between">
+				{autoApproveAll ? (
+					<text fg={defaultFg}>
+						<span fg={successColor}>
+							{"\u23f5\u23f5"} Auto-approve all enabled
+						</span>
+						<span fg="gray"> (Shift+Tab)</span>
+					</text>
+				) : (
+					<text fg="gray">Auto-approve all disabled (Shift+Tab)</text>
+				)}
+
+				<text fg="gray">
+					{activeAccount ? (
+						<span>Logged in: <span fg="cyan">{activeAccount.email}</span></span>
+					) : (
+						<span><span fg="yellow">●</span> Not logged in</span>
+					)}
 				</text>
-			) : (
-				<text fg="gray">Auto-approve all disabled (Shift+Tab)</text>
-			)}
+			</box>
 		</box>
 	);
 }

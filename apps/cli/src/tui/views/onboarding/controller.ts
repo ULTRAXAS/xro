@@ -26,6 +26,7 @@ import open from "../../../utils/open";
 import { getPersistedProviderApiKey } from "../../../utils/provider-auth";
 import { listLocalProviders } from "../../../utils/provider-catalog";
 import { getCliTelemetryService } from "../../../utils/telemetry";
+import { registerOrLoginXroUser } from "../../xro-account-manager";
 import {
 	loadCurrentUserPlanFromProviderSettings,
 	loadIndividualSubscriptionPlansFromProviderSettings,
@@ -81,6 +82,7 @@ const CUSTOM_MODEL_ID_ACTION = "__custom_model_id__";
 export interface OnboardingControllerProps {
 	onComplete: (result: OnboardingResult) => void;
 	onExit: () => void;
+	openLogin?: () => void;
 	providerSettingsManager?: ProviderSettingsManager;
 }
 
@@ -98,8 +100,13 @@ export function useOnboardingController(props: OnboardingControllerProps) {
 			}),
 		[],
 	);
-	const [step, setStep] = useState<OnboardingStep>("menu");
+	const [step, setStep] = useState<OnboardingStep>("xro_login");
 	const [menuSelected, setMenuSelected] = useState(0);
+	const [xroEmail, setXroEmail] = useState("");
+	const [xroPassword, setXroPassword] = useState("");
+	const [xroFocusedField, setXroFocusedField] = useState<"email" | "password">("email");
+	const [xroError, setXroError] = useState("");
+	const [xroLoading, setXroLoading] = useState(false);
 	const [oauthProvider, setOauthProvider] = useState("");
 	const [authStatus, setAuthStatus] = useState("");
 	const [authUrl, setAuthUrl] = useState("");
@@ -644,11 +651,6 @@ export function useOnboardingController(props: OnboardingControllerProps) {
 				: undefined,
 			sap: hasSapFields ? resolveProviderConfigSap(byoValues) : undefined,
 		});
-		// Emit a single `user.provider_configured` event mirroring the
-		// `{ provider }` payload shape used by the auth funnel. The save above
-		// is synchronous and infallible, so there's no start/fail counterpart;
-		// invalid credentials surface later as `task.provider_api_error` on
-		// the first real API call.
 		captureProviderConfigured(getCliTelemetryService(), activeProviderId);
 		transitionToModelPicker(activeProviderId);
 	}, [
@@ -658,6 +660,73 @@ export function useOnboardingController(props: OnboardingControllerProps) {
 		providerSettingsManager,
 		transitionToModelPicker,
 	]);
+
+	const sanitizeEmailInput = useCallback((val: string) => {
+		// Only allow alphanumeric, @, dots, hyphens, plus, and underscores
+		return val.replace(/[^a-zA-Z0-9@._+-]/g, "");
+	}, []);
+
+	const sanitizePasswordInput = useCallback((val: string) => {
+		// Strip unprintable control characters and whitespace line breaks
+		return val.replace(/[\s\r\n\t]/g, "");
+	}, []);
+
+	const handleEmailChange = useCallback((val: string) => {
+		setXroEmail(sanitizeEmailInput(val));
+	}, [sanitizeEmailInput]);
+
+	const handlePasswordChange = useCallback((val: string) => {
+		setXroPassword(sanitizePasswordInput(val));
+	}, [sanitizePasswordInput]);
+
+	const submitXroLogin = useCallback(async () => {
+		const email = xroEmail.trim();
+		const password = xroPassword.trim();
+
+		if (!email || !password) {
+			setXroError("Please enter both email and password.");
+			return;
+		}
+
+		// Validate email format strictly
+		const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+		if (!emailRegex.test(email)) {
+			setXroError("Please enter a valid email address (e.g. name@example.com).");
+			return;
+		}
+
+		if (password.length < 6) {
+			setXroError("Password must be at least 6 characters long.");
+			return;
+		}
+
+		setXroLoading(true);
+		setXroError("");
+		try {
+			const account = await registerOrLoginXroUser(email, password);
+			saveLocalProviderSettings(providerSettingsManager, {
+				providerId: "openai-compatible",
+				baseUrl: "https://ai.ultraxas.com/v1",
+				apiKey: account.apiKey,
+			});
+			providerSettingsManager.saveProviderSettings(
+				{
+					provider: "openai-compatible",
+					baseUrl: "https://ai.ultraxas.com/v1",
+					apiKey: account.apiKey,
+					model: "xro-8.5-pro",
+				},
+				{ setLastUsed: true },
+			);
+			setActiveProviderId("openai-compatible");
+			setSelectedModelId("xro-8.5-pro");
+			setStep("done");
+		} catch (err) {
+			setXroError(err instanceof Error ? err.message : String(err));
+		} finally {
+			setXroLoading(false);
+		}
+	}, [xroEmail, xroPassword, providerSettingsManager, transitionToModelPicker]);
 
 	const completeModelSelection = useCallback(
 		(modelId: string) => {
@@ -821,6 +890,7 @@ export function useOnboardingController(props: OnboardingControllerProps) {
 		},
 		resetAuth,
 		refreshLocalCliStatus: recheckLocalCli,
+		openLogin: props.openLogin ?? (() => {}),
 		startOAuthFlow,
 		startDeviceCodeFlow,
 		selectProvider,
@@ -829,6 +899,8 @@ export function useOnboardingController(props: OnboardingControllerProps) {
 		saveLocalCliConfig,
 		saveByoConfig,
 		saveModelSelection,
+		xroFocusedField,
+		setXroFocusedField,
 		saveThinkingLevel,
 	});
 
@@ -872,7 +944,27 @@ export function useOnboardingController(props: OnboardingControllerProps) {
 			setCustomModelId(value);
 			setCustomModelError("");
 		},
-		handleModelItemSelect: selectModelItem,
+		xroEmail,
+		xroPassword,
+		xroFocusedField,
+		xroError,
+		xroLoading,
+		setXroEmail: handleEmailChange,
+		setXroPassword: handlePasswordChange,
+		setXroFocusedField,
+		submitXroLogin,
+		handleMenuSelect: (index: number) => {
+			setMenuSelected(index);
+			const option = menuOptions[index];
+			if (!option) return;
+			if (option.value === "xro-account") {
+				setStep("xro_login");
+			} else if (isOnboardingOAuthProviderId(option.value)) {
+				startOAuthFlow(option.value as OnboardingOAuthProviderId);
+			} else {
+				setStep("byo_provider");
+			}
+		},
 		menuSelected,
 		menuOptions,
 		modelItems,

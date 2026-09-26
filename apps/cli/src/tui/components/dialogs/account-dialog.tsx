@@ -501,12 +501,12 @@ export function AccountDialogContent(
 	const displayName =
 		loaded.user.displayName?.trim() ||
 		loaded.user.email?.trim() ||
-		"Cline user";
+		"Xro user";
 	const activeAccount = loaded.activeOrganization?.name ?? "Personal account";
 
 	return (
 		<box flexDirection="column" paddingX={1} gap={1}>
-			<text fg={palette.act}>Cline Account</text>
+			<text fg={palette.act}>Xro Account</text>
 
 			<box flexDirection="row" gap={2}>
 				<box

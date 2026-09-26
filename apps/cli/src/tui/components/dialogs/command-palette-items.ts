@@ -1,5 +1,8 @@
 export type CommandPaletteAction =
 	| "theme"
+	| "login"
+	| "logout"
+	| "upgrade"
 	| "account"
 	| "compact"
 	| "undo"
@@ -38,11 +41,32 @@ const ACTION_ITEMS: Array<{
 		keywords: ["theme", "colors", "dark", "light", "appearance"],
 	},
 	{
+		action: "login",
+		label: "Sign In / Register Account",
+		shortcut: "Opt+I",
+		description: "Log in or create an Xro account",
+		keywords: ["login", "register", "auth", "account", "xro"],
+	},
+	{
+		action: "logout",
+		label: "Sign Out / Logout Account",
+		shortcut: "Opt+O",
+		description: "Log out of active Xro account",
+		keywords: ["logout", "signout", "exit", "account", "auth"],
+	},
+	{
+		action: "upgrade",
+		label: "Top Up Credits",
+		shortcut: "Opt+P",
+		description: "Top up your Xro CLI credits",
+		keywords: ["upgrade", "credits", "topup", "buy"],
+	},
+	{
 		action: "account",
 		label: "Open Account",
 		shortcut: "Opt+A",
-		description: "View or switch your Cline account",
-		keywords: ["account", "login", "auth", "cline"],
+		description: "View Xro account and credits",
+		keywords: ["account", "login", "auth", "xro"],
 	},
 	{
 		action: "compact",

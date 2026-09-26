@@ -30,24 +30,18 @@ const { values } = parseArgs({
 
 const dryRun = values["dry-run"] ?? false;
 const npmTag = values.tag ?? "latest";
-const wrapperPackageName = "cline";
+const wrapperPackageName = "@ultraxas/xro";
 
 const expectedPlatformPackages = [
-	"@cline/cli-darwin-arm64",
-	"@cline/cli-darwin-x64",
-	"@cline/cli-linux-arm64",
-	"@cline/cli-linux-x64",
-	"@cline/cli-windows-arm64",
-	"@cline/cli-windows-x64",
+	"@ultraxas/cli-darwin-arm64",
+	"@ultraxas/cli-darwin-x64",
+	"@ultraxas/cli-linux-arm64",
+	"@ultraxas/cli-linux-x64",
+	"@ultraxas/cli-windows-arm64",
+	"@ultraxas/cli-windows-x64",
 ] as const;
 
-const hostSdkPackages = [
-	{ name: "@cline/sdk", directory: "sdk" },
-	{ name: "@cline/core", directory: "core" },
-	{ name: "@cline/agents", directory: "agents" },
-	{ name: "@cline/llms", directory: "llms" },
-	{ name: "@cline/shared", directory: "shared" },
-] as const;
+const hostSdkPackages = [] as const;
 
 interface PlatformPackageManifest {
 	name: string;
@@ -244,7 +238,7 @@ console.log("\nPublishing platform packages...");
 const platformTasks = Object.keys(binaries)
 	.sort()
 	.map(async (name) => {
-		const dirName = name.replace("@cline/", "");
+		const dirName = name.replace("@ultraxas/", "");
 		const pkgDir = join(cliDir, "dist", dirName);
 
 		await publishPackage({

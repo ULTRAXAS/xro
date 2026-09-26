@@ -1,7 +1,11 @@
 import { isProviderSettingsUsable, ProviderSettingsManager } from "@cline/core";
+import { loadXroAccount } from "../xro-account-manager";
 import type { TuiProps } from "../types";
 
 export function isProviderConfigured(config: TuiProps["config"]): boolean {
+	if (!loadXroAccount()) {
+		return false;
+	}
 	if (config.apiKey?.trim()) {
 		return true;
 	}

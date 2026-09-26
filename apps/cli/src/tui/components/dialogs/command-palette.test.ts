@@ -47,7 +47,7 @@ describe("command palette", () => {
 			).toBe(true);
 		}
 		expect(paletteByCommandName.get("account")?.description).toBe(
-			"View or switch your Cline account",
+			"View Xro account and credits",
 		);
 	});
 

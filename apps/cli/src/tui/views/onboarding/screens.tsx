@@ -861,6 +861,7 @@ export function OnboardingMainMenuScreen(props: {
 	menuOptions: MenuOption[];
 	menuSelected: number;
 	mouse: MouseTrackerState;
+	onSelect: (index: number) => void;
 }) {
 	const defaultFg = useDefaultFg();
 	const colors = useOnboardingColors();
@@ -885,7 +886,7 @@ export function OnboardingMainMenuScreen(props: {
 					<strong>Welcome to Xro cli</strong>
 				</text>
 				<text fg="gray" marginTop={1}>
-					Connect a model provider to get started.
+					Sign in to your Xro account to get started.
 				</text>
 			</box>
 
@@ -907,6 +908,7 @@ export function OnboardingMainMenuScreen(props: {
 							paddingX={1}
 							gap={1}
 							alignItems="center"
+							onMouseUp={() => props.onSelect(i)}
 						>
 							<text
 								fg={isSel ? colors.accent : colors.mutedDetail}
@@ -934,5 +936,89 @@ export function OnboardingMainMenuScreen(props: {
 				<em>↑/↓ navigate, Enter to select, Ctrl+C to exit</em>
 			</text>
 		</box>
+	);
+}
+
+export function OnboardingXroLoginScreen(props: {
+	compact: boolean;
+	contentWidth: number;
+	email: string;
+	error: string;
+	focusedField: "email" | "password";
+	loading: boolean;
+	mouse: MouseTrackerState;
+	password: string;
+	onEmailInput: (v: string) => void;
+	onPasswordInput: (v: string) => void;
+	onSubmit: () => void;
+}) {
+	const defaultFg = useDefaultFg();
+	const colors = useOnboardingColors();
+	const blockWidth = Math.min(props.contentWidth, 54);
+
+	return (
+		<OnboardingFrame
+			compact={props.compact}
+			contentWidth={props.contentWidth}
+			mouse={props.mouse}
+		>
+			<box flexDirection="column" alignItems="center" gap={1}>
+				<text fg={colors.accent}>
+					<strong>Sign In / Register Xro Account</strong>
+				</text>
+				<text fg="gray">New users get 200 free credits upon sign in.</text>
+
+				{props.error && <text fg="red">{props.error}</text>}
+				{props.loading && <text fg="yellow">Authenticating with Xro Cloud...</text>}
+
+				<box flexDirection="column" width={blockWidth} marginTop={1} gap={1}>
+					<box flexDirection="row" width="100%">
+						<box width={12}>
+							<text fg={props.focusedField === "email" ? colors.accent : "gray"}>
+								{props.focusedField === "email" ? "❯ Email:" : "  Email:"}
+							</text>
+						</box>
+						<box flexGrow={1}>
+							<input
+								value={props.email}
+								onInput={props.onEmailInput}
+								onSubmit={props.onSubmit}
+								placeholder="you@example.com"
+								textColor={defaultFg}
+								focusedTextColor={defaultFg}
+								cursorColor={colors.accent}
+								focused={props.focusedField === "email"}
+							/>
+						</box>
+					</box>
+
+					<box flexDirection="row" width="100%">
+						<box width={12}>
+							<text fg={props.focusedField === "password" ? colors.accent : "gray"}>
+								{props.focusedField === "password" ? "❯ Password:" : "  Password:"}
+							</text>
+						</box>
+						<box flexGrow={1}>
+							<input
+								value={props.password}
+								onInput={props.onPasswordInput}
+								onSubmit={props.onSubmit}
+								placeholder="••••••••••••"
+								textColor={defaultFg}
+								focusedTextColor={defaultFg}
+								cursorColor={colors.accent}
+								focused={props.focusedField === "password"}
+							/>
+						</box>
+					</box>
+				</box>
+
+				<box marginTop={1}>
+					<text fg="gray">
+						<span fg={colors.accent}>[↑/↓/Tab]</span> switch field  <span fg={colors.accent}>[Enter]</span> submit
+					</text>
+				</box>
+			</box>
+		</OnboardingFrame>
 	);
 }

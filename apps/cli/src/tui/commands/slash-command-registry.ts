@@ -16,6 +16,9 @@ export type LocalSlashCommandName =
 	| "mcp"
 	| "plugins"
 	| "account"
+	| "login"
+	| "logout"
+	| "upgrade"
 	| "model"
 	| "theme"
 	| "compact"
@@ -55,8 +58,21 @@ const TUI_LOCAL_COMMANDS: Array<{
 		description: "Change color theme",
 	},
 	{
+		name: "login",
+		description: "Sign in or register an Xro account",
+		visible: false,
+	},
+	{
+		name: "logout",
+		description: "Sign out of your active Xro account",
+	},
+	{
+		name: "upgrade",
+		description: "Top up your Xro CLI credits",
+	},
+	{
 		name: "account",
-		description: "View Cline account",
+		description: "View Xro account and credits",
 	},
 	{
 		name: "compact",
@@ -86,6 +102,8 @@ const TUI_LOCAL_COMMANDS: Array<{
 
 const SYSTEM_COMMAND_ORDER = [
 	"theme",
+	"login",
+	"upgrade",
 	"account",
 	"compact",
 	"undo",

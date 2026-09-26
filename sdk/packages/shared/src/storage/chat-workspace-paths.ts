@@ -4,7 +4,7 @@ export const CLINE_CHAT_WORKSPACE_DIRECTORY_NAME = "chat";
 // Default data-dir anchors for the structural check below. The Node resolver
 // derives the real location from resolveClineDataDir(), which defaults to
 // `~/.cline/data`.
-const CLINE_CONFIG_DIRECTORY_NAME = ".cline";
+const CLINE_CONFIG_DIRECTORY_NAME = ".xrocli";
 const CLINE_DATA_DIRECTORY_NAME = "data";
 
 /**

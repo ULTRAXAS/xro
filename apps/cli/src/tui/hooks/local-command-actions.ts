@@ -5,6 +5,9 @@ export interface LocalSlashCommandActionInput {
 	name: string;
 	isRunning: boolean;
 	openAccount: () => void;
+	openLogin?: () => void;
+	logout?: () => void;
+	openUpgrade?: () => void;
 	openConfig: (options?: OpenConfigOptions) => void;
 	openMcpManager: () => Promise<boolean>;
 	openModelSelector: () => void;
@@ -41,6 +44,20 @@ export function runLocalSlashCommandAction(
 	}
 	if (normalized === "account") {
 		input.openAccount();
+		return true;
+	}
+	if (normalized === "login") {
+		if (input.openLogin) input.openLogin();
+		else input.openAccount();
+		return true;
+	}
+	if (normalized === "logout") {
+		if (input.logout) input.logout();
+		return true;
+	}
+	if (normalized === "upgrade") {
+		if (input.openUpgrade) input.openUpgrade();
+		else input.openAccount();
 		return true;
 	}
 	if (normalized === "model") {

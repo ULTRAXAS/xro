@@ -52,6 +52,7 @@ export function useOnboardingKeyboard(input: {
 	abortDeviceCode: () => void;
 	resetAuth: () => void;
 	refreshLocalCliStatus: () => void;
+	openLogin: () => void;
 	startOAuthFlow: (providerId: OnboardingOAuthProviderId) => void;
 	startDeviceCodeFlow: (providerId: OnboardingOAuthProviderId) => void;
 	selectProvider: (providerId: string) => void;
@@ -60,6 +61,8 @@ export function useOnboardingKeyboard(input: {
 	saveLocalCliConfig: () => void;
 	saveByoConfig: () => void;
 	saveModelSelection: () => void;
+	xroFocusedField?: "email" | "password";
+	setXroFocusedField?: Dispatch<SetStateAction<"email" | "password">>;
 	saveThinkingLevel: (level: ThinkingLevel) => void;
 }) {
 	useKeyboard((key) => {
@@ -71,6 +74,11 @@ export function useOnboardingKeyboard(input: {
 		}
 
 		if (key.name === "escape") {
+			if (input.step === "xro_login") {
+				input.setStep("menu");
+				input.setMenuSelected(0);
+				return;
+			}
 			if (input.step === "oauth_pending") {
 				input.abortOAuth();
 				input.resetAuth();
@@ -138,6 +146,13 @@ export function useOnboardingKeyboard(input: {
 			return;
 		}
 
+		if (input.step === "xro_login") {
+			if (key.name === "tab" || key.name === "down" || key.name === "up") {
+				input.setXroFocusedField?.((prev) => (prev === "email" ? "password" : "email"));
+			}
+			return;
+		}
+
 		if (input.step === "oauth_pending") {
 			if (key.name === "d" && input.oauthProvider === "cline") {
 				input.abortOAuth();
@@ -199,11 +214,13 @@ export function useOnboardingKeyboard(input: {
 				);
 				return;
 			}
-			if (key.name === "return") {
+			if (key.name === "return" || key.name === "enter") {
 				const option = input.menuOptions[input.menuSelected];
 				if (!option) return;
-				if (isOnboardingOAuthProviderId(option.value)) {
-					input.startOAuthFlow(option.value);
+				if (option.value === "xro-account") {
+					input.setStep("xro_login");
+				} else if (isOnboardingOAuthProviderId(option.value)) {
+					input.startOAuthFlow(option.value as OnboardingOAuthProviderId);
 				} else {
 					input.setStep("byo_provider");
 				}

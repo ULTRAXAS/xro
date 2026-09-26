@@ -1,42 +1,33 @@
 {
-	"name": "@cline/cli",
-	"displayName": "Xro cli",
-	"version": "3.0.63",
-	"description": "Autonomous coding agent CLI - capable of creating/editing files, running commands, using the browser, and more",
+	"name": "@ultraxas/xro",
+	"displayName": "Xro CLI",
+	"version": "2.0.0",
+	"description": "Xro 8.5 Autonomous coding agent CLI",
 	"type": "module",
 	"publishConfig": {
 		"access": "public"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/cline/cline.git",
+		"url": "git+https://github.com/ultraxas/xro.git",
 		"directory": "apps/cli"
 	},
 	"keywords": [
-		"cline",
-		"claude",
-		"dev",
+		"xro",
+		"ultraxas",
 		"mcp",
-		"openrouter",
 		"coding",
 		"agent",
 		"autonomous",
-		"chatgpt",
-		"sonnet",
 		"ai",
-		"llama",
 		"cli"
 	],
 	"author": {
-		"name": "Cline Bot Inc."
+		"name": "ULTRAXAS"
 	},
 	"license": "Apache-2.0",
-	"homepage": "https://cline.bot",
-	"bugs": {
-		"url": "https://github.com/cline/cline/issues"
-	},
 	"bin": {
-		"xro": "src/index.ts"
+		"xro": "./dist/index.js"
 	},
 	"engines": {
 		"node": ">=22"
@@ -85,6 +76,7 @@
 		"commander": "^14.0.3",
 		"fzf": "^0.5.2",
 		"marked": "^15.0.12",
+		"nanoid": "^5.1.7",
 		"open": "^10.2.0",
 		"opentui-spinner": "^0.0.7",
 		"pino": "^10.3.1",
@@ -93,7 +85,6 @@
 		"react-devtools-core": "^7.0.1",
 		"react-reconciler": "0.33.0",
 		"yaml": "^2.8.2",
-		"nanoid": "^5.1.7",
 		"zod": "^4.1.11"
 	},
 	"devDependencies": {

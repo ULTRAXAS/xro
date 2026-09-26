@@ -17,11 +17,13 @@ import {
 	OnboardingProviderConfigScreen,
 	OnboardingProviderPickerScreen,
 	OnboardingThinkingLevelScreen,
+	OnboardingXroLoginScreen,
 } from "./screens";
 
 export interface OnboardingViewProps {
 	onComplete: (result: OnboardingResult) => void;
 	onExit: () => void;
+	openLogin?: () => void;
 	providerSettingsManager?: ProviderSettingsManager;
 }
 
@@ -31,6 +33,24 @@ export function OnboardingView(props: OnboardingViewProps) {
 	const state = useOnboardingController(props);
 	const contentWidth = Math.min(width - 4, HOME_VIEW_MAX_WIDTH);
 	const compact = height < 28;
+
+	if (state.step === "xro_login") {
+		return (
+			<OnboardingXroLoginScreen
+				compact={compact}
+				contentWidth={contentWidth}
+				email={state.xroEmail}
+				error={state.xroError}
+				focusedField={state.xroFocusedField}
+				loading={state.xroLoading}
+				mouse={mouse}
+				password={state.xroPassword}
+				onEmailInput={state.setXroEmail}
+				onPasswordInput={state.setXroPassword}
+				onSubmit={state.submitXroLogin}
+			/>
+		);
+	}
 
 	if (state.step === "done") {
 		return <OnboardingDoneScreen mouse={mouse} />;
@@ -188,6 +208,7 @@ export function OnboardingView(props: OnboardingViewProps) {
 			menuOptions={state.menuOptions}
 			menuSelected={state.menuSelected}
 			mouse={mouse}
+			onSelect={state.handleMenuSelect}
 		/>
 	);
 }

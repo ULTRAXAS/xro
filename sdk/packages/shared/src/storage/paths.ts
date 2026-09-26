@@ -32,7 +32,7 @@ export {
 } from "./chat-workspace-paths";
 
 const DEPRECATED_CONFIG_DIR = ".clinerules";
-const CLINE_CONFIG_DIR = ".cline";
+const CLINE_CONFIG_DIR = ".xrocli";
 /**
  * The vendor-neutral `.agents` directory. Originally adopted only for the
  * agentskills.io skills convention (hence the historical name), it is now also
@@ -78,7 +78,7 @@ export function resolveChatWorkspacePath(): string {
 	);
 }
 
-export const CLINE_MCP_SETTINGS_FILE_NAME = "cline_mcp_settings.json";
+export const CLINE_MCP_SETTINGS_FILE_NAME = "xro_mcp_settings.json";
 export const CLINE_CONNECTOR_SETTINGS_FILE_NAME = "settings.json";
 
 function resolveDefaultHomeDir(): string {
@@ -156,7 +156,7 @@ export function resolveClineDir(): string {
 	if (envDir) {
 		return envDir;
 	}
-	return join(HOME_DIR, ".cline");
+	return join(HOME_DIR, ".xrocli");
 }
 
 export function resolveDocumentsClineDirectoryPath(): string {

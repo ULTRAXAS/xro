@@ -9,6 +9,11 @@ export function XroLogo() {
 					{row.text}
 				</text>
 			))}
+			<box marginTop={0}>
+				<text fg="#8a3fd4">
+					<em>v1.0.6</em>
+				</text>
+			</box>
 		</box>
 	);
 }
