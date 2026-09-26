@@ -11,7 +11,7 @@ export function XroLogo() {
 			))}
 			<box marginTop={0}>
 				<text fg="#8a3fd4">
-					<em>v1.0.6</em>
+					<em>v2.0.0</em>
 				</text>
 			</box>
 		</box>

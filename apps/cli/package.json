@@ -1,7 +1,7 @@
 {
 	"name": "@ultraxas/xro",
 	"displayName": "Xro CLI",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"description": "Xro 8.5 Autonomous coding agent CLI",
 	"type": "module",
 	"publishConfig": {
