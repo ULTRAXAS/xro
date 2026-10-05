@@ -314,7 +314,7 @@ const wrapperPackageJson = {
 	...(bugs ? { bugs } : {}),
 	...(sourceRepository ? { repository: sourceRepository } : {}),
 	bin: {
-		cline: "./bin/cline",
+		xro: "./bin/xro",
 	},
 	scripts: {
 		postinstall: "node ./postinstall.mjs || true",
