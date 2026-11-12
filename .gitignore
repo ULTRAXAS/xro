@@ -95,3 +95,10 @@ apps/examples/desktop-app/webview/.next
 # Next.js generated type shim (churns between dev and build)
 apps/examples/desktop-app/webview/next-env.d.ts
 apps/examples/desktop-app/.cursor/settings.json
+
+# Prebuilt CLI binaries (published via npm / GitHub Releases, not source)
+apps/cli/xro-linux-*
+apps/cli/xro-darwin-*
+apps/cli/xro-windows-*
+apps/cli/xro-android-*
+*.deb
