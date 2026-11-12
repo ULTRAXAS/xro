@@ -56,6 +56,10 @@ import {
 	SkillsPickerContent,
 } from "./components/dialogs/skills-picker";
 import { ThemePickerContent } from "./components/dialogs/theme-picker";
+import {
+	VoiceDialogContent,
+	type VoiceDialogResult,
+} from "./components/dialogs/voice-dialog";
 import { Toast, type ToastState, type ToastVariant } from "./components/toast";
 import { EventBridgeProvider } from "./contexts/event-bridge-context";
 import { SessionProvider, useSession } from "./contexts/session-context";
@@ -771,6 +775,31 @@ function App(props: TuiProps) {
 		setSessionLastTotalTokens,
 	]);
 
+	const promptInputRef = useRef<{
+		populateInput: (value: string) => void;
+		getCurrentInputText: () => string;
+	} | null>(null);
+
+	const openVoice = useCallback(async () => {
+		const result = await dialog.choice<VoiceDialogResult>({
+			closeOnEscape: true,
+			content: (ctx: ChoiceContext<VoiceDialogResult>) => (
+				<VoiceDialogContent {...ctx} />
+			),
+		});
+		refocusTextareaRef.current();
+		if (result && result.ok && result.text) {
+			const current = promptInputRef.current?.getCurrentInputText() || "";
+			const next = current.trim()
+				? `${current.trim()} ${result.text}`
+				: result.text;
+			promptInputRef.current?.populateInput(next);
+			refocusTextareaRef.current();
+		} else if (result && result.ok && !result.text) {
+			showToast("No speech detected", "info");
+		}
+	}, [dialog, showToast]);
+
 	const { handleSlashCommand, openHistory } = useLocalCommandActions({
 		slashCommandRegistry,
 		canForkSession,
@@ -782,6 +811,7 @@ function App(props: TuiProps) {
 		openMcpManager,
 		openModelSelector,
 		openSkills,
+		openVoice,
 		openThemePicker,
 		refocusTextarea: () => refocusTextareaRef.current(),
 		setAppView,
@@ -884,6 +914,7 @@ function App(props: TuiProps) {
 		setAppView,
 		turnErrorReportedRef: agentHandlers.turnErrorReportedRef,
 	});
+	promptInputRef.current = promptInput;
 	const focusPromptTextarea = promptInput.focusTextarea;
 	const submitInitialPrompt = promptInput.submitInitialPrompt;
 	refocusTextareaRef.current = promptInput.refocusTextarea;

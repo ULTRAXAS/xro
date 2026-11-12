@@ -64,6 +64,7 @@ Running logout immediately clears all local authentication tokens and returns th
 | Command | Usage | Description |
 | :--- | :--- | :--- |
 | `/logout` | `/logout` | Log out of your Xro account and clear stored credentials |
+| `/voice` | `/voice` | Record microphone and transcribe speech to text into the input |
 | `/clear` | `/clear` | Clear active conversation history buffer |
 | `/help` | `/help` | Open interactive help and documentation menu |
 | `/settings` | `/settings` | Configure workspace rules, permissions, and models |

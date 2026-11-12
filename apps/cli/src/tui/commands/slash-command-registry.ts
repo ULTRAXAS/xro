@@ -14,6 +14,7 @@ export type LocalSlashCommandName =
 	| "settings"
 	| "config"
 	| "mcp"
+	| "voice"
 	| "plugins"
 	| "account"
 	| "login"
@@ -75,6 +76,10 @@ const TUI_LOCAL_COMMANDS: Array<{
 		description: "View Xro account and credits",
 	},
 	{
+		name: "voice",
+		description: "Voice transcription (speech to text)",
+	},
+	{
 		name: "compact",
 		description: "Compact context",
 	},
@@ -105,6 +110,7 @@ const SYSTEM_COMMAND_ORDER = [
 	"login",
 	"upgrade",
 	"account",
+	"voice",
 	"compact",
 	"undo",
 	"clear",

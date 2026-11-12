@@ -1,8 +1,8 @@
 # Xro CLI (`@ultraxas/xro`)
 
-> **Autonomous Terminal Coding Agent for Xro 8.5**
+> **Autonomous Terminal Coding Agent for Xro 8.6**
 
-Xro CLI brings the full power of Xro 8.5 directly into your terminal. It acts as an autonomous coding assistant capable of inspecting codebases, executing terminal commands, creating files, and managing complex developer workflows.
+Xro CLI brings the full power of Xro 8.6 directly into your terminal. It acts as an autonomous coding assistant capable of inspecting codebases, executing terminal commands, creating files, and managing complex developer workflows.
 
 ---
 
@@ -47,6 +47,7 @@ Log out any time with `/logout` inside the chat palette, or `xro logout` from th
 | Command | Description |
 | :--- | :--- |
 | `/logout` | Log out and clear stored credentials |
+| `/voice` | Record microphone and transcribe speech to text into the input |
 | `/clear` | Clear the active conversation history |
 | `/help` | Open interactive help |
 | `/settings` | Configure workspace rules, permissions, and models |
@@ -67,4 +68,4 @@ All requests route through `https://ultraxas.com/v1/chat/completions` with Beare
 
 ---
 
-Xro CLI's agent core was originally bootstrapped from [Cline](https://github.com/cline/cline) (Apache-2.0) and has been substantially modified and rebranded for the Xro 8.5 platform.
+Xro CLI's agent core was originally bootstrapped from [Cline](https://github.com/cline/cline) (Apache-2.0) and has been substantially modified and rebranded for the Xro 8.6 platform.

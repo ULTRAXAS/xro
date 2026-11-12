@@ -1,8 +1,8 @@
 # Xro CLI Documentation (`@ultraxas/xro`)
 
-> **Autonomous Terminal Coding Agent for Xro 8.5**
+> **Autonomous Terminal Coding Agent for Xro 8.6**
 
-Xro CLI brings the full power of Xro 8.5 directly into your terminal command line. Built for developers, Xro CLI acts as an autonomous coding assistant capable of inspecting codebases, executing terminal commands, creating files, and managing complex developer workflows.
+Xro CLI brings the full power of Xro 8.6 directly into your terminal command line. Built for developers, Xro CLI acts as an autonomous coding assistant capable of inspecting codebases, executing terminal commands, creating files, and managing complex developer workflows.
 
 ---
 
@@ -64,6 +64,7 @@ Running logout immediately clears all local authentication tokens and returns th
 | Command | Usage | Description |
 | :--- | :--- | :--- |
 | `/logout` | `/logout` | Log out of your Xro account and clear stored credentials |
+| `/voice` | `/voice` | Record microphone and transcribe speech to text into the input |
 | `/clear` | `/clear` | Clear active conversation history buffer |
 | `/help` | `/help` | Open interactive help and documentation menu |
 | `/settings` | `/settings` | Configure workspace rules, permissions, and models |

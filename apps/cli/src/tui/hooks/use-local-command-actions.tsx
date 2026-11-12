@@ -26,6 +26,7 @@ export function useLocalCommandActions(input: {
 	openMcpManager: () => Promise<boolean>;
 	openModelSelector: () => void;
 	openSkills: (invocation?: LocalSlashCommandInvocation) => void;
+	openVoice?: () => void;
 	openThemePicker: () => void;
 	refocusTextarea: () => void;
 	setAppView: (view: AppView) => void;
@@ -235,6 +236,7 @@ export function useLocalCommandActions(input: {
 				openMcpManager,
 				openModelSelector,
 				openSkills,
+				openVoice: input.openVoice,
 				openThemePicker,
 				runCompact,
 				runFork,
@@ -264,6 +266,7 @@ export function useLocalCommandActions(input: {
 			input.openLogin,
 			input.logout,
 			input.openUpgrade,
+			input.openVoice,
 		],
 	);
 

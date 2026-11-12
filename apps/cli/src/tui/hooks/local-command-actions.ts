@@ -12,6 +12,7 @@ export interface LocalSlashCommandActionInput {
 	openMcpManager: () => Promise<boolean>;
 	openModelSelector: () => void;
 	openSkills: (invocation?: LocalSlashCommandInvocation) => void;
+	openVoice?: () => void;
 	openThemePicker: () => void;
 	invocation?: LocalSlashCommandInvocation;
 	runCompact: () => void;
@@ -44,6 +45,10 @@ export function runLocalSlashCommandAction(
 	}
 	if (normalized === "account") {
 		input.openAccount();
+		return true;
+	}
+	if (normalized === "voice") {
+		if (input.openVoice) input.openVoice();
 		return true;
 	}
 	if (normalized === "login") {

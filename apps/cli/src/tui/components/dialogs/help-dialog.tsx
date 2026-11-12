@@ -66,6 +66,12 @@ const HELP_ROWS: HelpRow[] = [
 	},
 	{
 		kind: "entry",
+		id: "k-opt-voice",
+		key: "Opt+V",
+		desc: "Voice transcription (speech to text)",
+	},
+	{
+		kind: "entry",
 		id: "k-opt-help",
 		key: "Opt+K",
 		desc: "Show this help",
@@ -138,6 +144,12 @@ const HELP_ROWS: HelpRow[] = [
 		id: "c-account",
 		key: "/account",
 		desc: "View Xro account and credits",
+	},
+	{
+		kind: "entry",
+		id: "c-voice",
+		key: "/voice",
+		desc: "Voice transcription (speech to text)",
 	},
 	{
 		kind: "entry",

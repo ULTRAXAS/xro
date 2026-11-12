@@ -4,6 +4,7 @@ export type CommandPaletteAction =
 	| "logout"
 	| "upgrade"
 	| "account"
+	| "voice"
 	| "compact"
 	| "undo"
 	| "clear"
@@ -67,6 +68,13 @@ const ACTION_ITEMS: Array<{
 		shortcut: "Opt+A",
 		description: "View Xro account and credits",
 		keywords: ["account", "login", "auth", "xro"],
+	},
+	{
+		action: "voice",
+		label: "Voice Transcription",
+		shortcut: "Opt+V",
+		description: "Record microphone and transcribe speech to text",
+		keywords: ["voice", "speech", "mic", "transcribe", "stt", "dictation", "audio"],
 	},
 	{
 		action: "compact",
