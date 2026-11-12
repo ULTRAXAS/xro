@@ -9,13 +9,19 @@ export interface RecordingCommand {
 	args: (outFile: string) => string[];
 }
 
+export interface VoiceRecordingOptions {
+	onInterimTranscript?: (text: string) => void;
+}
+
 export interface VoiceRecordingSession {
 	filePath: string;
 	stop: () => Promise<string>;
 	cancel: () => Promise<void>;
 }
 
-export const XRO_TRANSCRIBE_API_URL = "https://ai.ultraxas.com/transcribe";
+export const ULTRAXAS_MIC_TRANSCRIBE_URL =
+	"https://ultraxas.com/api/mic-transcribe";
+export const XRO_AI_TRANSCRIBE_URL = "https://ai.ultraxas.com/transcribe";
 
 function isCommandAvailable(cmd: string): boolean {
 	try {
@@ -158,7 +164,95 @@ export function resolveRecordingCommand(): RecordingCommand | null {
 	return null;
 }
 
-export function startAudioRecording(): VoiceRecordingSession {
+export function createWavSnapshotBuffer(filePath: string): Buffer | null {
+	try {
+		if (!fs.existsSync(filePath)) return null;
+		const raw = fs.readFileSync(filePath);
+		if (raw.length <= 44) return null;
+		const copy = Buffer.from(raw);
+		const fileSize = copy.length;
+		copy.writeUInt32LE(fileSize - 8, 4);
+		copy.writeUInt32LE(fileSize - 44, 40);
+		return copy;
+	} catch {
+		return null;
+	}
+}
+
+export async function transcribeAudioBuffer(
+	audioBuffer: Buffer,
+): Promise<string> {
+	// 1. Primary path: ultraxas.com/api/mic-transcribe (same backend stack as website composer)
+	try {
+		const form = new FormData();
+		form.append(
+			"audio",
+			new Blob([audioBuffer], { type: "audio/wav" }),
+			"mic.wav",
+		);
+
+		const headers: Record<string, string> = {
+			Origin: "https://ultraxas.com",
+			Referer: "https://ultraxas.com/",
+		};
+		const account = loadXroAccount();
+		if (account?.apiKey) {
+			headers.Authorization = `Bearer ${account.apiKey}`;
+		}
+
+		const resp = await fetch(ULTRAXAS_MIC_TRANSCRIBE_URL, {
+			method: "POST",
+			headers,
+			body: form,
+			signal: AbortSignal.timeout(12000),
+		});
+
+		if (resp.ok) {
+			const data = (await resp.json()) as { text?: string; error?: string };
+			if (data && typeof data.text === "string") {
+				return data.text.trim();
+			}
+		}
+	} catch {
+		// Fall back to direct local whisper if ultraxas.com proxy is unavailable
+	}
+
+	// 2. Direct Whisper fallback: ai.ultraxas.com/transcribe
+	try {
+		const headers: Record<string, string> = {
+			"Content-Type": "audio/wav",
+			"X-Audio-Mime": "audio/wav",
+		};
+		const account = loadXroAccount();
+		if (account?.apiKey) {
+			headers.Authorization = `Bearer ${account.apiKey}`;
+		}
+
+		const resp = await fetch(XRO_AI_TRANSCRIBE_URL, {
+			method: "POST",
+			headers,
+			body: audioBuffer,
+			signal: AbortSignal.timeout(12000),
+		});
+
+		if (resp.ok) {
+			const data = (await resp.json()) as { text?: string; error?: string };
+			if (data && typeof data.text === "string") {
+				return data.text.trim();
+			}
+		}
+	} catch (e) {
+		throw new Error(
+			`Transcription service unreachable: ${e instanceof Error ? e.message : String(e)}`,
+		);
+	}
+
+	return "";
+}
+
+export function startAudioRecording(
+	options?: VoiceRecordingOptions,
+): VoiceRecordingSession {
 	const tool = resolveRecordingCommand();
 	if (!tool) {
 		throw new Error(
@@ -176,10 +270,34 @@ export function startAudioRecording(): VoiceRecordingSession {
 	});
 
 	let stopped = false;
+	let interimTimer: NodeJS.Timeout | null = null;
+	let lastTranscribedSize = 44;
+	let isInterimBusy = false;
+
+	if (options?.onInterimTranscript) {
+		interimTimer = setInterval(async () => {
+			if (stopped || isInterimBusy) return;
+			const buf = createWavSnapshotBuffer(tempFile);
+			if (!buf || buf.length <= lastTranscribedSize + 16000) return;
+			isInterimBusy = true;
+			try {
+				const interimText = await transcribeAudioBuffer(buf);
+				if (!stopped && interimText && options.onInterimTranscript) {
+					lastTranscribedSize = buf.length;
+					options.onInterimTranscript(interimText);
+				}
+			} catch {
+				// Silent for transient interim checks
+			} finally {
+				isInterimBusy = false;
+			}
+		}, 1200);
+	}
 
 	return {
 		filePath: tempFile,
 		stop: async (): Promise<string> => {
+			if (interimTimer) clearInterval(interimTimer);
 			if (stopped) return tempFile;
 			stopped = true;
 
@@ -241,6 +359,7 @@ export function startAudioRecording(): VoiceRecordingSession {
 			});
 		},
 		cancel: async (): Promise<void> => {
+			if (interimTimer) clearInterval(interimTimer);
 			if (stopped) return;
 			stopped = true;
 			try {
@@ -269,41 +388,14 @@ export function startAudioRecording(): VoiceRecordingSession {
 export async function transcribeAudioFile(audioPath: string): Promise<string> {
 	try {
 		const audioBuffer = fs.readFileSync(audioPath);
-		const headers: Record<string, string> = {
-			"Content-Type": "audio/wav",
-			"X-Audio-Mime": "audio/wav",
-		};
-		const account = loadXroAccount();
-		if (account?.apiKey) {
-			headers["Authorization"] = `Bearer ${account.apiKey}`;
-		}
-
-		const resp = await fetch(XRO_TRANSCRIBE_API_URL, {
-			method: "POST",
-			headers,
-			body: audioBuffer,
-		});
-
-		if (!resp.ok) {
-			const errBody = await resp.text().catch(() => "");
-			throw new Error(
-				`Transcription service returned status ${resp.status}: ${errBody || resp.statusText}`,
-			);
-		}
-
-		const data = (await resp.json()) as { text?: string; error?: string };
-		if (data.error) {
-			throw new Error(`Transcription failed: ${data.error}`);
-		}
-
-		return (data.text || "").trim();
+		return await transcribeAudioBuffer(audioBuffer);
 	} finally {
 		try {
 			if (fs.existsSync(audioPath)) {
 				fs.unlinkSync(audioPath);
 			}
 		} catch {
-			// Ignore temp file cleanup error
+			// Ignore cleanup error
 		}
 	}
 }

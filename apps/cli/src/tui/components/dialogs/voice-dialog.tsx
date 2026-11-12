@@ -22,6 +22,7 @@ export function VoiceDialogContent(props: ChoiceContext<VoiceDialogResult>) {
 		"recording",
 	);
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
+	const [liveTranscript, setLiveTranscript] = useState("");
 	const [errorMessage, setErrorMessage] = useState("");
 
 	const sessionRef = useRef<VoiceRecordingSession | null>(null);
@@ -33,7 +34,13 @@ export function VoiceDialogContent(props: ChoiceContext<VoiceDialogResult>) {
 		let intervalId: NodeJS.Timeout | null = null;
 
 		try {
-			const session = startAudioRecording();
+			const session = startAudioRecording({
+				onInterimTranscript: (text) => {
+					if (!isCancelled && text) {
+						setLiveTranscript(text);
+					}
+				},
+			});
 			sessionRef.current = session;
 
 			intervalId = setInterval(() => {
@@ -78,8 +85,13 @@ export function VoiceDialogContent(props: ChoiceContext<VoiceDialogResult>) {
 					const audioPath = await session.stop();
 					sessionRef.current = null;
 					const text = await transcribeAudioFile(audioPath);
-					resolve({ ok: true, text });
+					resolve({ ok: true, text: text || liveTranscript });
 				} catch (err) {
+					// If final pass failed but we have interim transcript, use it
+					if (liveTranscript.trim()) {
+						resolve({ ok: true, text: liveTranscript.trim() });
+						return;
+					}
 					setStatus("error");
 					setErrorMessage(
 						err instanceof Error
@@ -121,7 +133,7 @@ export function VoiceDialogContent(props: ChoiceContext<VoiceDialogResult>) {
 	return (
 		<box flexDirection="column" paddingX={1} gap={1}>
 			<box flexDirection="row" gap={1}>
-				<text fg={palette.act}>🎙️  Voice Transcription (Speech-to-Text)</text>
+				<text fg={palette.act}>🎙️  Voice Transcription (Live Streaming)</text>
 			</box>
 
 			{status === "recording" && (
@@ -135,11 +147,29 @@ export function VoiceDialogContent(props: ChoiceContext<VoiceDialogResult>) {
 					<box flexDirection="row" gap={1}>
 						<text fg="red">● Recording</text>
 						<text fg="white">[{timeDisplay}]</text>
+						<text fg="cyan">(Live Speech Streaming)</text>
 					</box>
-					<text fg="gray">Speak clearly into your microphone...</text>
+					{liveTranscript ? (
+						<box
+							flexDirection="column"
+							border
+							borderColor="gray"
+							paddingX={1}
+							marginTop={0}
+						>
+							<text fg="gray">Partial transcript:</text>
+							<text fg="white">
+								<em>"{liveTranscript}"</em>
+							</text>
+						</box>
+					) : (
+						<text fg="gray">
+							Speak into your microphone... (live transcript will stream below)
+						</text>
+					)}
 					<box flexDirection="column" marginTop={0}>
 						<text fg="white">
-							[Enter] or [Space] Stop recording and transcribe
+							[Enter] or [Space] Stop recording and insert transcript
 						</text>
 						<text fg="gray">[Esc] Cancel</text>
 					</box>
@@ -156,11 +186,13 @@ export function VoiceDialogContent(props: ChoiceContext<VoiceDialogResult>) {
 				>
 					<box flexDirection="row" gap={1}>
 						<spinner name="dots" color={palette.act} />
-						<text fg="cyan">Transcribing speech with Xro ASR...</text>
+						<text fg="cyan">Finalizing transcript with Xro ASR...</text>
 					</box>
-					<text fg="gray">
-						Processing microphone audio buffer, please wait...
-					</text>
+					{liveTranscript && (
+						<text fg="gray">
+							Current: <em>"{liveTranscript}"</em>
+						</text>
+					)}
 				</box>
 			)}
 
