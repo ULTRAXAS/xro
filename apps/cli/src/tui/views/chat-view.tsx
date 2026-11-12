@@ -58,6 +58,7 @@ export function ChatView(props: {
 	runtimeInteraction?: RuntimeToolInteraction | null;
 	onResolveToolApproval: (id: number, approved: boolean) => void;
 	onResolveAskQuestion: (id: number, answer: string | null) => void;
+	voiceControlBar?: React.ReactNode;
 }) {
 	const {
 		config,
@@ -139,6 +140,7 @@ export function ChatView(props: {
 								textareaRef={props.textareaRef}
 							/>
 						</box>
+						{props.voiceControlBar}
 					</>
 				)}
 

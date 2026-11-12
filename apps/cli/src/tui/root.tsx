@@ -56,10 +56,12 @@ import {
 	SkillsPickerContent,
 } from "./components/dialogs/skills-picker";
 import { ThemePickerContent } from "./components/dialogs/theme-picker";
+import { VoiceControlBar } from "./components/voice-control-bar";
 import {
-	VoiceDialogContent,
-	type VoiceDialogResult,
-} from "./components/dialogs/voice-dialog";
+	startAudioRecording,
+	transcribeAudioFile,
+	type VoiceRecordingSession,
+} from "./utils/voice-recorder";
 import { Toast, type ToastState, type ToastVariant } from "./components/toast";
 import { EventBridgeProvider } from "./contexts/event-bridge-context";
 import { SessionProvider, useSession } from "./contexts/session-context";
@@ -78,7 +80,6 @@ import { useRuntimeDialogBridge } from "./hooks/use-runtime-dialog-bridge";
 import { useSlashCommands } from "./hooks/use-slash-commands";
 import { useTerminalTitle } from "./hooks/use-terminal-title";
 import { TerminalColorsContext } from "./hooks/use-theme";
-import { loadXroAccount } from "./xro-account-manager";
 import type { AppView, TuiProps, TuiStartupTarget } from "./types";
 import { hydrateSessionMessages } from "./utils/hydrate-messages";
 import { isProviderConfigured } from "./utils/provider-configured";
@@ -780,25 +781,126 @@ function App(props: TuiProps) {
 		getCurrentInputText: () => string;
 	} | null>(null);
 
-	const openVoice = useCallback(async () => {
-		const result = await dialog.choice<VoiceDialogResult>({
-			closeOnEscape: true,
-			content: (ctx: ChoiceContext<VoiceDialogResult>) => (
-				<VoiceDialogContent {...ctx} />
-			),
-		});
-		refocusTextareaRef.current();
-		if (result && result.ok && result.text) {
-			const current = promptInputRef.current?.getCurrentInputText() || "";
-			const next = current.trim()
-				? `${current.trim()} ${result.text}`
-				: result.text;
-			promptInputRef.current?.populateInput(next);
-			refocusTextareaRef.current();
-		} else if (result && result.ok && !result.text) {
-			showToast("No speech detected", "info");
+	// In-composer live streaming voice transcription
+	const [voiceStatus, setVoiceStatus] = useState<
+		"idle" | "recording" | "finalizing" | "error"
+	>("idle");
+	const [voiceElapsedSeconds, setVoiceElapsedSeconds] = useState(0);
+	const [voiceErrorMessage, setVoiceErrorMessage] = useState("");
+	const voiceSessionRef = useRef<VoiceRecordingSession | null>(null);
+	const voiceBaseTextRef = useRef<string>("");
+	const voiceLatestTranscriptRef = useRef<string>("");
+
+	useEffect(() => {
+		if (voiceStatus !== "recording") return;
+		const timer = setInterval(() => {
+			setVoiceElapsedSeconds((sec) => sec + 1);
+		}, 1000);
+		return () => clearInterval(timer);
+	}, [voiceStatus]);
+
+	useEffect(() => {
+		return () => {
+			if (voiceSessionRef.current) {
+				void voiceSessionRef.current.cancel();
+			}
+		};
+	}, []);
+
+	const stopVoice = useCallback(async () => {
+		const session = voiceSessionRef.current;
+		if (!session) {
+			setVoiceStatus("idle");
+			return;
 		}
-	}, [dialog, showToast]);
+		setVoiceStatus("finalizing");
+		voiceSessionRef.current = null;
+		try {
+			const audioPath = await session.stop();
+			let finalTranscript = "";
+			try {
+				finalTranscript = await transcribeAudioFile(audioPath);
+			} catch {
+				finalTranscript = voiceLatestTranscriptRef.current;
+			}
+			const bestText = (
+				finalTranscript ||
+				voiceLatestTranscriptRef.current ||
+				""
+			).trim();
+			if (bestText) {
+				const base = voiceBaseTextRef.current.trim();
+				const next = base ? `${base} ${bestText}` : bestText;
+				promptInputRef.current?.populateInput(next);
+			} else {
+				showToast("No speech detected", "info");
+			}
+			setVoiceStatus("idle");
+		} catch (err) {
+			if (voiceLatestTranscriptRef.current.trim()) {
+				const base = voiceBaseTextRef.current.trim();
+				const next = base
+					? `${base} ${voiceLatestTranscriptRef.current.trim()}`
+					: voiceLatestTranscriptRef.current.trim();
+				promptInputRef.current?.populateInput(next);
+			}
+			setVoiceStatus("idle");
+			showToast(
+				`Voice error: ${err instanceof Error ? err.message : String(err)}`,
+				"error",
+			);
+		} finally {
+			refocusTextareaRef.current();
+		}
+	}, [showToast]);
+
+	const cancelVoice = useCallback(() => {
+		const session = voiceSessionRef.current;
+		voiceSessionRef.current = null;
+		setVoiceStatus("idle");
+		if (session) {
+			void session.cancel();
+		}
+		promptInputRef.current?.populateInput(voiceBaseTextRef.current);
+		refocusTextareaRef.current();
+		showToast("Voice transcription cancelled", "info");
+	}, [showToast]);
+
+	const toggleVoice = useCallback(() => {
+		if (voiceStatus === "recording") {
+			void stopVoice();
+			return;
+		}
+		if (voiceStatus === "finalizing") {
+			return;
+		}
+
+		const current = promptInputRef.current?.getCurrentInputText() || "";
+		voiceBaseTextRef.current = current;
+		voiceLatestTranscriptRef.current = "";
+		setVoiceErrorMessage("");
+
+		try {
+			const session = startAudioRecording({
+				onInterimTranscript: (interimText) => {
+					if (!interimText) return;
+					voiceLatestTranscriptRef.current = interimText;
+					const base = voiceBaseTextRef.current.trim();
+					const next = base ? `${base} ${interimText}` : interimText;
+					promptInputRef.current?.populateInput(next);
+				},
+			});
+			voiceSessionRef.current = session;
+			setVoiceStatus("recording");
+			setVoiceElapsedSeconds(0);
+		} catch (err) {
+			setVoiceStatus("idle");
+			showToast(
+				`Microphone error: ${err instanceof Error ? err.message : String(err)}`,
+				"error",
+			);
+		}
+	}, [voiceStatus, stopVoice, showToast]);
 
 	const { handleSlashCommand, openHistory } = useLocalCommandActions({
 		slashCommandRegistry,
@@ -811,7 +913,7 @@ function App(props: TuiProps) {
 		openMcpManager,
 		openModelSelector,
 		openSkills,
-		openVoice,
+		openVoice: toggleVoice,
 		openThemePicker,
 		refocusTextarea: () => refocusTextareaRef.current(),
 		setAppView,
@@ -959,6 +1061,13 @@ function App(props: TuiProps) {
 		[props, showToast],
 	);
 	const submitFromInput = useCallback(() => {
+		if (voiceStatus === "recording") {
+			void stopVoice();
+			return;
+		}
+		if (voiceStatus === "finalizing") {
+			return;
+		}
 		if (editingQueuedPromptId) {
 			return;
 		}
@@ -968,6 +1077,8 @@ function App(props: TuiProps) {
 		}
 		promptInput.handleSubmit();
 	}, [
+		voiceStatus,
+		stopVoice,
 		editingQueuedPromptId,
 		promoteQueuedPrompt,
 		promptInput,
@@ -1032,6 +1143,8 @@ function App(props: TuiProps) {
 		onRestoreCheckpoint: openCheckpointRestore,
 		onOpenCommandPalette: openCommandPalette,
 		onCommandPaletteShortcut: runCommandPaletteShortcut,
+		isVoiceRecording: voiceStatus === "recording",
+		onVoiceCancel: cancelVoice,
 	});
 
 	const acOptions = autocomplete.getFilteredOptions();
@@ -1075,6 +1188,15 @@ function App(props: TuiProps) {
 			selected: autocomplete.selected,
 			onSelect: promptInput.selectAutocompleteOption,
 		},
+		voiceControlBar: (
+			<VoiceControlBar
+				status={voiceStatus}
+				elapsedSeconds={voiceElapsedSeconds}
+				errorMessage={voiceErrorMessage}
+				onStop={stopVoice}
+				onCancel={cancelVoice}
+			/>
+		),
 	};
 
 	const wrapWithBridge = (children: React.ReactNode) => (

@@ -3,7 +3,6 @@ import fs from "node:fs";
 import {
 	resolveRecordingCommand,
 	startAudioRecording,
-	transcribeAudioFile,
 } from "./voice-recorder";
 
 describe("voice recorder", () => {

@@ -60,6 +60,8 @@ export function useRootKeyboard(input: {
 	onRestoreCheckpoint: () => Promise<void>;
 	onOpenCommandPalette: () => Promise<void>;
 	onCommandPaletteShortcut: (key: KeyEvent) => boolean;
+	isVoiceRecording?: boolean;
+	onVoiceCancel?: () => void;
 }) {
 	const session = useSession();
 	const lastEscapeRef = useRef(0);
@@ -238,6 +240,11 @@ export function useRootKeyboard(input: {
 		}
 
 		if (key.name === "escape") {
+			if (input.isVoiceRecording) {
+				key.preventDefault();
+				input.onVoiceCancel?.();
+				return;
+			}
 			if (queuedSelection.editingId) {
 				key.preventDefault();
 				queuedSelection.cancelEdit();

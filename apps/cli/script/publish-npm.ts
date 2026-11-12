@@ -233,23 +233,20 @@ if (!dryRun) {
 	await verifyPublishedDependencies(hostSdkDependencies);
 }
 
-// Step 1: Publish platform-specific packages (in parallel)
+// Step 1: Publish platform-specific packages (sequentially to prevent npm upload race conditions)
 console.log("\nPublishing platform packages...");
-const platformTasks = Object.keys(binaries)
-	.sort()
-	.map(async (name) => {
-		const dirName = name.replace("@ultraxas/", "");
-		const pkgDir = join(cliDir, "dist", dirName);
+for (const name of Object.keys(binaries).sort()) {
+	const dirName = name.replace("@ultraxas/", "");
+	const pkgDir = join(cliDir, "dist", dirName);
 
-		await publishPackage({
-			name,
-			version,
-			dir: pkgDir,
-			tag: npmTag,
-			dryRun,
-		});
+	await publishPackage({
+		name,
+		version,
+		dir: pkgDir,
+		tag: npmTag,
+		dryRun,
 	});
-await Promise.all(platformTasks);
+}
 
 // Step 2: Generate and publish the main wrapper package
 console.log("\nPreparing main package...");

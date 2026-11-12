@@ -42,6 +42,7 @@ export function HomeView(props: {
 	textareaRef?: React.MutableRefObject<TextareaHandle | null>;
 	autocomplete?: AutocompleteDropdownProps;
 	onToggleMode: () => void;
+	voiceControlBar?: React.ReactNode;
 }) {
 	const {
 		config,
@@ -114,6 +115,7 @@ export function HomeView(props: {
 					onFocusRequest={props.onInputFocusRequest}
 					textareaRef={props.textareaRef}
 				/>
+				{props.voiceControlBar}
 
 				<box flexDirection="column" height={DROPDOWN_MAX_HEIGHT + 1}>
 					{hasAutocomplete && props.autocomplete ? (
