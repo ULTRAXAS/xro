@@ -1,6 +1,7 @@
 out
 dist
 dist-standalone
+dist-termux
 node_modules
 tmp
 .vscode-test/

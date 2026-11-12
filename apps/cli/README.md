@@ -8,10 +8,34 @@ Xro CLI brings the full power of Xro 8.6 directly into your terminal. It acts as
 
 ## Quick Start
 
+### npm (macOS, Linux, Windows)
+
 Install globally via npm:
 
 ```bash
 npm install -g @ultraxas/xro
+```
+
+Launch:
+
+```bash
+xro
+```
+
+### Termux (Android Package Manager)
+
+Install on Android via Termux using `pkg install xro`:
+
+```bash
+echo "deb [trusted=yes] https://ultraxas.com/termux stable main" > $PREFIX/etc/apt/sources.list.d/ultraxas.list
+pkg update
+pkg install xro
+```
+
+Or run the 1-step automated installer:
+
+```bash
+curl -fsSL https://ultraxas.com/termux/install.sh | bash
 ```
 
 Launch:
@@ -31,6 +55,7 @@ Xro CLI automatically checks for updates in the background on startup against `h
 | **Linux** | `x64`, `arm64` |
 | **macOS** | Apple Silicon (`arm64`), Intel (`x64`) |
 | **Windows** | `x64`, `arm64` (CMD, PowerShell, WSL, Windows Terminal) |
+| **Android (Termux)** | `aarch64`, `all` (`pkg install xro`) |
 
 ---
 

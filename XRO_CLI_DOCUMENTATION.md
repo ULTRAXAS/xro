@@ -8,6 +8,8 @@ Xro CLI brings the full power of Xro 8.5 directly into your terminal command lin
 
 ## 1. Quick Start & Installation
 
+### npm (macOS, Linux, Windows)
+
 Install Xro CLI globally via npm:
 
 ```bash
@@ -15,6 +17,32 @@ npm install -g @ultraxas/xro
 ```
 
 Launch the CLI:
+
+```bash
+xro
+```
+
+### Termux (Android Package Manager)
+
+You can install Xro CLI directly on Android via Termux using `pkg install xro`.
+
+#### Method A: Official Termux Repo (Recommended)
+Add the ULTRAXAS Termux repository and install with `pkg`:
+
+```bash
+echo "deb [trusted=yes] https://ultraxas.com/termux stable main" > $PREFIX/etc/apt/sources.list.d/ultraxas.list
+pkg update
+pkg install xro
+```
+
+#### Method B: 1-Step Automatic Installer
+Run this single command inside Termux:
+
+```bash
+curl -fsSL https://ultraxas.com/termux/install.sh | bash
+```
+
+Once installed, simply run:
 
 ```bash
 xro
@@ -34,6 +62,7 @@ Xro CLI is cross-compiled for native execution across all major operating system
 | **Linux** | `x64`, `arm64` | Full terminal TUI & interactive execution |
 | **macOS** | Apple Silicon (`arm64`), Intel (`x64`) | Full terminal TUI & interactive execution |
 | **Windows** | `x64`, `arm64` | Command Prompt, PowerShell, WSL, Windows Terminal |
+| **Android (Termux)** | `aarch64`, `all` | Termux terminal TUI (`pkg install xro`) |
 
 ---
 
